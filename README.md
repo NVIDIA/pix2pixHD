@@ -3,7 +3,7 @@
 <br><br><br><br>
 
 # pix2pixHD
-### [[Project]](https://tcwang0509.github.io/pix2pixHD/) [[Paper]](https://arxiv.org/) <br>
+### [[Project]](https://tcwang0509.github.io/pix2pixHD/) [[Paper]](https://arxiv.org/pdf/1711.11585.pdf) <br>
 Pytorch implementation for high-resolution (e.g. 2048x1024) photorealistic image-to-image translation, for example, turning semantic label maps into photo-realistic images, or synthesizing portraits from face label maps. <br><br>
 [High-Resolution Image Synthesis and Semantic Manipulation with Conditional GANs](https://tcwang0509.github.io/pix2pixHD/)  
  Ting-Chun Wang<sup>1</sup>, Ming-Yu Liu<sup>1</sup>, Jun-Yan Zhu<sup>2</sup>, Andrew Tao<sup>1</sup>, Jan Kautz<sup>1</sup>, Bryan Catanzaro<sup>1</sup>  
@@ -13,7 +13,7 @@ Pytorch implementation for high-resolution (e.g. 2048x1024) photorealistic image
 ## Release notice
 Due to some unexpected delay, we have not got the approval from NVIDIA to release the code yet.<br>
 We are working on it and it should be resolved in a couple of days.<br>
-If you want to get notified once the code is released, please subscribe [here](https://tcwang0509.github.io/pix2pixHD/subscribe.html)
+If you want to get notified once the code is released, please subscribe [here](https://tcwang0509.github.io/pix2pixHD/subscribe.html).
 
 ## Image-to-image translation at 2k/1k resolution
 - Our label-to-streetview results
