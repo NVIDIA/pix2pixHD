@@ -11,8 +11,7 @@ Pytorch implementation for high-resolution (e.g. 2048x1024) photorealistic image
  In arxiv, 2017.  
 
 ## Release notice
-Due to some unexpected delay, we have not got the approval from NVIDIA to release the code yet.<br>
-We are working on it and it should be resolved in a couple of days.<br>
+The code is ready to publish but still under final approval process. It should be approved in a couple of days.<br>
 If you want to get notified once the code is released, please subscribe [here](https://tcwang0509.github.io/pix2pixHD/subscribe.html).
 
 ## Image-to-image translation at 2k/1k resolution
