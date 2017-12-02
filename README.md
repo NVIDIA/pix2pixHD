@@ -4,9 +4,9 @@
 
 # pix2pixHD
 ### [[Project]](https://tcwang0509.github.io/pix2pixHD/) [[Paper]](https://arxiv.org/pdf/1711.11585.pdf) <br>
-Pytorch implementation for high-resolution (e.g. 2048x1024) photorealistic image-to-image translation, for example, turning semantic label maps into photo-realistic images, or synthesizing portraits from face label maps. <br><br>
+Pytorch implementation for high-resolution (e.g. 2048x1024) photorealistic image-to-image translation, for example, turning semantic label maps into photo-realistic images or synthesizing portraits from face label maps. <br><br>
 [High-Resolution Image Synthesis and Semantic Manipulation with Conditional GANs](https://tcwang0509.github.io/pix2pixHD/)  
- [Ting-Chun Wang](https://tcwang0509.github.io/)<sup>1</sup>, [Ming-Yu Liu](http://mingyuliu.net/)<sup>1</sup>, [Jun-Yan Zhu](http://people.eecs.berkeley.edu/~junyanz/)<sup>2</sup>, Andrew Tao<sup>1</sup>, Jan Kautz<sup>1</sup>, Bryan Catanzaro<sup>1</sup>  
+ [Ting-Chun Wang](https://tcwang0509.github.io/)<sup>1</sup>, [Ming-Yu Liu](http://mingyuliu.net/)<sup>1</sup>, [Jun-Yan Zhu](http://people.eecs.berkeley.edu/~junyanz/)<sup>2</sup>, Andrew Tao<sup>1</sup>, [Jan Kautz](http://jankautz.com/)<sup>1</sup>, [Bryan Catanzaro](http://catanzaro.name/)<sup>1</sup>  
  <sup>1</sup>NVIDIA Corporation, <sup>2</sup>UC Berkeley  
  In arxiv, 2017.  
 
@@ -52,3 +52,16 @@ If you want to get notified once the code is released, please subscribe [here](h
   <img src='imgs/city_short.gif' width='380'/>
   <img src='imgs/face_short.gif' width='490'/>
 </p>
+
+### Citation
+
+If you find this useful for your research, please use the following.
+
+```
+@article{wang2017highres,
+  title={High-Resolution Image Synthesis and Semantic Manipulation with Conditional GANs},
+  author={Ting-Chun Wang and Ming-Yu Liu and Jun-Yan Zhu and Andrew Tao and Jan Kautz and Bryan Catanzaro},
+  journal={arXiv preprint arXiv:1711.11585},
+  year={2017}
+}
+```
