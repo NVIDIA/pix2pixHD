@@ -10,10 +10,6 @@ Pytorch implementation of our method for high-resolution (e.g. 2048x1024) photor
  <sup>1</sup>NVIDIA Corporation, <sup>2</sup>UC Berkeley  
  In arxiv, 2017.  
 
-## Release notice
-The code is ready to publish but still under final approval process. It should be approved in a couple of days.<br>
-If you want to get notified once the code is released, please subscribe [here](https://tcwang0509.github.io/pix2pixHD/subscribe.html).
-
 ## Image-to-image translation at 2k/1k resolution
 - Our label-to-streetview results
 <p align='center'>  
@@ -53,7 +49,69 @@ If you want to get notified once the code is released, please subscribe [here](h
   <img src='imgs/face_short.gif' width='490'/>
 </p>
 
-### Citation
+## Prerequisites
+- Linux or macOS
+- Python 2 or 3
+- NVIDIA GPU (12G or 24G memory) + CUDA cuDNN
+
+## Getting Started
+### Installation
+- Install PyTorch and dependencies from http://pytorch.org
+- Install python libraries [dominate](https://github.com/Knio/dominate).
+```bash
+pip install dominate
+```
+- Clone this repo:
+```bash
+git clone https://github.com/NVIDIA/pix2pixHD
+cd pix2pixHD
+```
+
+
+### Testing
+- A few example Cityscapes test images are included in the `datasets` folder.
+- Please download the pre-trained Cityscapes model from [here](https://drive.google.com/file/d/1h9SykUnuZul7J3Nbms2QGH1wa85nbN2-/view?usp=sharing) (google drive link), and put it under `./checkpoints/label2city_1024p/`
+- Test the model (`bash ./scripts/test_1024p.sh`):
+```bash
+#!./scripts/test_1024p.sh
+python test.py --name label2city_1024p --netG local --ngf 32 --resize_or_crop none
+```
+The test results will be saved to a html file here: `./results/label2city_1024p/test_latest/index.html`.
+
+More example scripts can be found in the `scripts` directory.
+
+
+### Dataset
+- We use the Cityscapes dataset. To train a model on the full dataset, please download it from the [official website](https://www.cityscapes-dataset.com/) (registration required).
+After downloading, please put it under the `datasets` folder in the same way the example images are provided.
+
+
+### Training
+- Train a model at 1024 x 512 resolution (`bash ./scripts/train_512p.sh`):
+```bash
+#!./scripts/train_512p.sh
+python train.py --name label2city_512p
+```
+- To view training results, please checkout intermediate results in `./checkpoints/label2city_512p/web/index.html`.
+If you have tensorflow installed, you can see tensorboard logs in `./checkpoints/label2city_512p/logs` by adding `--tf_log` to the training scripts.
+
+### Multi-GPU training
+- Train a model using multiple GPUs (`bash ./scripts/train_512p_multigpu.sh`):
+```bash
+#!./scripts/train_512p_multigpu.sh
+python train.py --name label2city_512p --batchSize 8 --gpu_ids 0,1,2,3,4,5,6,7
+```
+Note: this is not tested and we trained our model using single GPU only. Please use at your own discretion.
+
+### Training at full resolution
+- To train the images at full resolution (2048 x 1024) requires a GPU with 24G memory (`bash ./scripts/train_1024p_24G.sh`).
+If only GPUs with 12G memory are available, please use the 12G script (`bash ./scripts/train_1024p_12G.sh`), which will crop the images during training. Performance is not guaranteed using this script.
+
+## More Training/test Details
+- Flags: see `options/train_options.py` and `options/base_options.py` for all the training flags; see `options/test_options.py` and `options/base_options.py` for all the test flags.
+
+
+## Citation
 
 If you find this useful for your research, please use the following.
 
@@ -65,3 +123,6 @@ If you find this useful for your research, please use the following.
   year={2017}
 }
 ```
+
+## Acknowledgments
+This code borrows heavily from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix).
