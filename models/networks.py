@@ -2,13 +2,9 @@
 ### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import torch
 import torch.nn as nn
-from torch.nn import init
 import functools
 from torch.autograd import Variable
 import numpy as np
-import math
-import torch.nn.functional as F
-import copy
 
 ###############################################################################
 # Functions

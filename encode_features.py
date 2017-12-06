@@ -4,9 +4,7 @@ from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
 import numpy as np
-import os, time
-import util.util as util
-from torch.autograd import Variable
+import os
 
 opt = TrainOptions().parse()
 opt.nThreads = 1

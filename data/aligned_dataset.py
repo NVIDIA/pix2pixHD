@@ -1,13 +1,9 @@
 ### Copyright (C) 2017 NVIDIA Corporation. All rights reserved. 
 ### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import os.path
-import random
-import torchvision.transforms as transforms
-import torch
 from data.base_dataset import BaseDataset, get_params, get_transform, normalize
 from data.image_folder import make_dataset
 from PIL import Image
-import numpy as np
 
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
