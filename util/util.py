@@ -1,5 +1,3 @@
-### Copyright (C) 2017 NVIDIA Corporation. All rights reserved. 
-### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 from __future__ import print_function
 import torch
 import numpy as np
@@ -25,6 +23,7 @@ def tensor2im(image_tensor, imtype=np.uint8, normalize=True):
         image_numpy = image_numpy[:,:,0]
     return image_numpy.astype(imtype)
 
+# Converts a one-hot tensor into a colorful label map
 def tensor2label(output, n_label, imtype=np.uint8):
     output = output.cpu().float()    
     if output.size()[0] > 1:
@@ -48,6 +47,11 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+###############################################################################
+# Code from
+# https://github.com/ycszen/pytorch-seg/blob/master/transform.py
+# Modified so it complies with the Citscape label map colors
+###############################################################################
 def uint82bin(n, count=8):
     """returns the binary of integer n, count refers to amount of bits"""
     return ''.join([str((n >> y) & 1) for y in range(count-1, -1, -1)])
@@ -63,9 +67,7 @@ def labelcolormap(N):
     else:
         cmap = np.zeros((N, 3), dtype=np.uint8)
         for i in range(N):
-            r = 0
-            g = 0
-            b = 0
+            r, g, b = 0, 0, 0
             id = i
             for j in range(7):
                 str_id = uint82bin(id)

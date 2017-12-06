@@ -109,6 +109,7 @@ If only GPUs with 12G memory are available, please use the 12G script (`bash ./s
 
 ## More Training/test Details
 - Flags: see `options/train_options.py` and `options/base_options.py` for all the training flags; see `options/test_options.py` and `options/base_options.py` for all the test flags.
+- Instance map: we take in both label maps and instance maps as input. If you don't want to use instance maps, please specify the flag `--no_instance`.
 
 
 ## Citation
