@@ -97,8 +97,8 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
             model.module.save('latest')            
             np.savetxt(iter_path, (epoch, epoch_iter), delimiter=',', fmt='%d')
        
-    # end of epoch 
-	iter_end_time = time.time()
+    # end of epoch
+    iter_end_time = time.time()
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
 
