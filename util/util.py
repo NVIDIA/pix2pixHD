@@ -24,13 +24,15 @@ def tensor2im(image_tensor, imtype=np.uint8, normalize=True):
     return image_numpy.astype(imtype)
 
 # Converts a one-hot tensor into a colorful label map
-def tensor2label(output, n_label, imtype=np.uint8):
-    output = output.cpu().float()    
-    if output.size()[0] > 1:
-        output = output.max(0, keepdim=True)[1]
-    output = Colorize(n_label)(output)
-    output = np.transpose(output.numpy(), (1, 2, 0))
-    return output.astype(imtype)
+def tensor2label(label_tensor, n_label, imtype=np.uint8):
+    if n_label == 0:
+        return tensor2im(label_tensor, imtype)
+    label_tensor = label_tensor.cpu().float()    
+    if label_tensor.size()[0] > 1:
+        label_tensor = label_tensor.max(0, keepdim=True)[1]
+    label_tensor = Colorize(n_label)(label_tensor)
+    label_numpy = np.transpose(label_tensor.numpy(), (1, 2, 0))
+    return label_numpy.astype(imtype)
 
 def save_image(image_numpy, image_path):
     image_pil = Image.fromarray(image_numpy)

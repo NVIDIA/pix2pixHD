@@ -33,12 +33,16 @@ class AlignedDataset(BaseDataset):
         self.dataset_size = len(self.label_paths) 
       
     def __getitem__(self, index):        
-        ### label maps
+        ### label maps        
         label_path = self.label_paths[index]              
         label = Image.open(label_path)        
-        params = get_params(self.opt, label.size)          
-        transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
-        label_tensor = transform_label(label) * 255.0
+        params = get_params(self.opt, label.size)
+        if self.opt.label_nc == 0:
+            transform_label = get_transform(self.opt, params)
+            label_tensor = transform_label(label.convert('RGB'))
+        else:
+            transform_label = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
+            label_tensor = transform_label(label) * 255.0
 
         image_tensor = inst_tensor = feat_tensor = 0
         ### real images
