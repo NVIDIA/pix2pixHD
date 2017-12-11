@@ -51,7 +51,7 @@ def define_D(input_nc, ndf, n_layers_D, norm='instance', use_sigmoid=False, num_
     print(netD)
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
-        netD.cuda(device_id=gpu_ids[0])
+        netD.cuda(gpu_ids[0])
     netD.apply(weights_init)
     return netD
 
