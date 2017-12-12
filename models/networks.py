@@ -362,7 +362,7 @@ class NLayerDiscriminator(nn.Module):
         sequence += [[nn.Conv2d(nf, 1, kernel_size=kw, stride=1, padding=padw)]]
 
         if use_sigmoid:
-            sequence += [nn.Sigmoid()]
+            sequence += [[nn.Sigmoid()]]
 
         if getIntermFeat:
             for n in range(len(sequence)):
