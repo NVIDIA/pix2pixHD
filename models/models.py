@@ -3,8 +3,12 @@
 import torch
 
 def create_model(opt):
-    from .pix2pixHD_model import Pix2PixHDModel
-    model = Pix2PixHDModel()    
+    if opt.model == 'pix2pixHD':
+    	from .pix2pixHD_model import Pix2PixHDModel
+    	model = Pix2PixHDModel()    
+    else:
+    	from .ui_model import UIModel
+    	model = UIModel()
     model.initialize(opt)
     print("model [%s] was created" % (model.name()))
 
