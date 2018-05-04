@@ -11,7 +11,13 @@ from . import networks
 class Pix2PixHDModel(BaseModel):
     def name(self):
         return 'Pix2PixHDModel'
-
+    
+    def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
+        flags = (True, use_gan_feat_loss, use_vgg_loss, True, True)
+        def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake):
+            return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake),flags) if f]
+        return loss_filter
+    
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
         if opt.resize_or_crop != 'none': # when training at full res this causes OOM
@@ -20,7 +26,6 @@ class Pix2PixHDModel(BaseModel):
         self.use_features = opt.instance_feat or opt.label_feat
         self.gen_features = self.use_features and not self.opt.load_features
         input_nc = opt.label_nc if opt.label_nc != 0 else 3
-
         ##### define networks        
         # Generator network
         netG_input_nc = input_nc        
@@ -65,13 +70,16 @@ class Pix2PixHDModel(BaseModel):
             self.old_lr = opt.lr
 
             # define loss functions
+            self.loss_filter = self.init_loss_filter(not opt.no_ganFeat_loss, not opt.no_vgg_loss)
+            
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)   
             self.criterionFeat = torch.nn.L1Loss()
             if not opt.no_vgg_loss:             
                 self.criterionVGG = networks.VGGLoss(self.gpu_ids)
+                
         
             # Names so we can breakout loss
-            self.loss_names = ['G_GAN', 'G_GAN_Feat', 'G_VGG', 'D_real', 'D_fake']
+            self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake')
 
             # initialize optimizers
             # optimizer G
@@ -172,7 +180,7 @@ class Pix2PixHDModel(BaseModel):
             loss_G_VGG = self.criterionVGG(fake_image, real_image) * self.opt.lambda_feat
         
         # Only return the fake_B image if necessary to save BW
-        return [ [ loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ], None if not infer else fake_image ]
+        return [ self.loss_filter( loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ), None if not infer else fake_image ]
 
     def inference(self, label, inst):
         # Encode Inputs        
