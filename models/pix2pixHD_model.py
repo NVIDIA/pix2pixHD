@@ -270,3 +270,10 @@ class Pix2PixHDModel(BaseModel):
         if self.opt.verbose:
             print('update learning rate: %f -> %f' % (self.old_lr, lr))
         self.old_lr = lr
+
+class InferenceModel(Pix2PixHDModel):
+    def forward(self, inp):
+        label, inst = inp
+        return self.inference(label, inst)
+
+        
