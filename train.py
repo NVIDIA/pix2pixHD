@@ -38,7 +38,12 @@ print('#training images = %d' % dataset_size)
 model = create_model(opt)
 visualizer = Visualizer(opt)
 
-total_steps = (start_epoch-1) * dataset_size + epoch_iter    
+total_steps = (start_epoch-1) * dataset_size + epoch_iter
+
+display_delta = total_steps % opt.display_freq
+print_delta = total_steps % opt.print_freq
+save_delta = total_steps % opt.save_latest_freq
+
 for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     epoch_start_time = time.time()
     if epoch != start_epoch:
@@ -49,7 +54,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         epoch_iter += opt.batchSize
 
         # whether to collect output images
-        save_fake = total_steps % opt.display_freq == 0
+        save_fake = total_steps % opt.display_freq == display_delta
 
         ############## Forward Pass ######################
         losses, generated = model(Variable(data['label']), Variable(data['inst']), 
@@ -78,7 +83,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         ############## Display results and errors ##########
         ### print out errors
-        if total_steps % opt.print_freq == 0:
+        if total_steps % opt.print_freq == print_delta:
             errors = {k: v.data[0] if not isinstance(v, int) else v for k, v in loss_dict.items()}
             t = (time.time() - iter_start_time) / opt.batchSize
             visualizer.print_current_errors(epoch, epoch_iter, errors, t)
@@ -92,7 +97,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
             visualizer.display_current_results(visuals, epoch, total_steps)
 
         ### save latest model
-        if total_steps % opt.save_latest_freq == 0:
+        if total_steps % opt.save_latest_freq == save_delta:
             print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
             model.module.save('latest')            
             np.savetxt(iter_path, (epoch, epoch_iter), delimiter=',', fmt='%d')
