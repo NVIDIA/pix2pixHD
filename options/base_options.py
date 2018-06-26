@@ -13,7 +13,7 @@ class BaseOptions():
     def initialize(self):    
         # experiment specifics
         self.parser.add_argument('--name', type=str, default='label2city', help='name of the experiment. It decides where to store samples and models')        
-        self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')                       
+        self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         self.parser.add_argument('--model', type=str, default='pix2pixHD', help='which model to use')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')        
@@ -23,7 +23,8 @@ class BaseOptions():
         self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=1024, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=512, help='then crop to this size')
-        self.parser.add_argument('--label_nc', type=int, default=35, help='# of input image channels')
+        self.parser.add_argument('--label_nc', type=int, default=35, help='# of input label channels')
+        self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
         self.parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
 
         # for setting inputs

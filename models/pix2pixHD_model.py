@@ -19,7 +19,7 @@ class Pix2PixHDModel(BaseModel):
         self.isTrain = opt.isTrain
         self.use_features = opt.instance_feat or opt.label_feat
         self.gen_features = self.use_features and not self.opt.load_features
-        input_nc = opt.label_nc if opt.label_nc != 0 else 3
+        input_nc = opt.label_nc if opt.label_nc != 0 else opt.input_nc
 
         ##### define networks        
         # Generator network
@@ -75,15 +75,21 @@ class Pix2PixHDModel(BaseModel):
 
             # initialize optimizers
             # optimizer G
-            if opt.niter_fix_global > 0:
-                print('------------- Only training the local enhancer network (for %d epochs) ------------' % opt.niter_fix_global)
+            if opt.niter_fix_global > 0:                
+                import sys
+                if sys.version_info >= (3,0):
+                    finetune_list = set()
+                else:
+                    from sets import Set
+                    finetune_list = Set()
                 params_dict = dict(self.netG.named_parameters())
                 params = []
                 for key, value in params_dict.items():       
-                    if key.startswith('model' + str(opt.n_local_enhancers)):
-                        params += [{'params':[value],'lr':opt.lr}]
-                    else:
-                        params += [{'params':[value],'lr':0.0}]                            
+                    if key.startswith('model' + str(opt.n_local_enhancers)):                    
+                        params += [value]
+                        finetune_list.add(key.split('.')[0])  
+                print('------------- Only training the local enhancer network (for %d epochs) ------------' % opt.niter_fix_global)
+                print('The layers that are finetuned are ', sorted(finetune_list))                         
             else:
                 params = list(self.netG.parameters())
             if self.gen_features:              
@@ -195,14 +201,14 @@ class Pix2PixHDModel(BaseModel):
 
         # randomly sample from the feature clusters
         inst_np = inst.cpu().numpy().astype(int)                                      
-        feat_map = torch.cuda.FloatTensor(1, self.opt.feat_num, inst.size()[2], inst.size()[3])                   
+        feat_map = self.Tensor(inst.size()[0], self.opt.feat_num, inst.size()[2], inst.size()[3])
         for i in np.unique(inst_np):    
             label = i if i < 1000 else i//1000
             if label in features_clustered:
                 feat = features_clustered[label]
                 cluster_idx = np.random.randint(0, feat.shape[0]) 
                                             
-                idx = (inst == i).nonzero()
+                idx = (inst == int(i)).nonzero()
                 for k in range(self.opt.feat_num):                                    
                     feat_map[idx[:,0], idx[:,1] + k, idx[:,2], idx[:,3]] = feat[cluster_idx, k] 
         return feat_map
@@ -219,7 +225,7 @@ class Pix2PixHDModel(BaseModel):
             feature[i] = np.zeros((0, feat_num+1))
         for i in np.unique(inst_np):
             label = i if i < 1000 else i//1000
-            idx = (inst == i).nonzero()
+            idx = (inst == int(i)).nonzero()
             num = idx.size()[0]
             idx = idx[num//2,:]
             val = np.zeros((1, feat_num+1))                        
