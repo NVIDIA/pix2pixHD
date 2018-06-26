@@ -11,7 +11,13 @@ from . import networks
 class Pix2PixHDModel(BaseModel):
     def name(self):
         return 'Pix2PixHDModel'
-
+    
+    def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
+        flags = (True, use_gan_feat_loss, use_vgg_loss, True, True)
+        def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake):
+            return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake),flags) if f]
+        return loss_filter
+    
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
         if opt.resize_or_crop != 'none': # when training at full res this causes OOM
@@ -45,8 +51,8 @@ class Pix2PixHDModel(BaseModel):
         if self.gen_features:          
             self.netE = networks.define_G(opt.output_nc, opt.feat_num, opt.nef, 'encoder', 
                                           opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)  
-            
-        print('---------- Networks initialized -------------')
+        if self.opt.verbose:
+                print('---------- Networks initialized -------------')
 
         # load networks
         if not self.isTrain or opt.continue_train or opt.load_pretrain:
@@ -65,13 +71,16 @@ class Pix2PixHDModel(BaseModel):
             self.old_lr = opt.lr
 
             # define loss functions
+            self.loss_filter = self.init_loss_filter(not opt.no_ganFeat_loss, not opt.no_vgg_loss)
+            
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)   
             self.criterionFeat = torch.nn.L1Loss()
             if not opt.no_vgg_loss:             
                 self.criterionVGG = networks.VGGLoss(self.gpu_ids)
+                
         
             # Names so we can breakout loss
-            self.loss_names = ['G_GAN', 'G_GAN_Feat', 'G_VGG', 'D_real', 'D_fake']
+            self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake')
 
             # initialize optimizers
             # optimizer G
@@ -82,6 +91,7 @@ class Pix2PixHDModel(BaseModel):
                 else:
                     from sets import Set
                     finetune_list = Set()
+
                 params_dict = dict(self.netG.named_parameters())
                 params = []
                 for key, value in params_dict.items():       
@@ -109,13 +119,15 @@ class Pix2PixHDModel(BaseModel):
             oneHot_size = (size[0], self.opt.label_nc, size[2], size[3])
             input_label = torch.cuda.FloatTensor(torch.Size(oneHot_size)).zero_()
             input_label = input_label.scatter_(1, label_map.data.long().cuda(), 1.0)
+            if self.opt.data_type==16:
+                input_label = input_label.half()
 
         # get edges from instance map
         if not self.opt.no_instance:
             inst_map = inst_map.data.cuda()
             edge_map = self.get_edges(inst_map)
             input_label = torch.cat((input_label, edge_map), dim=1) 
-        input_label = Variable(input_label, volatile=infer)
+        input_label = Variable(input_label, requires_grad = not infer)
 
         # real images for training
         if real_image is not None:
@@ -178,7 +190,7 @@ class Pix2PixHDModel(BaseModel):
             loss_G_VGG = self.criterionVGG(fake_image, real_image) * self.opt.lambda_feat
         
         # Only return the fake_B image if necessary to save BW
-        return [ [ loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ], None if not infer else fake_image ]
+        return [ self.loss_filter( loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ), None if not infer else fake_image ]
 
     def inference(self, label, inst):
         # Encode Inputs        
@@ -210,7 +222,9 @@ class Pix2PixHDModel(BaseModel):
                                             
                 idx = (inst == int(i)).nonzero()
                 for k in range(self.opt.feat_num):                                    
-                    feat_map[idx[:,0], idx[:,1] + k, idx[:,2], idx[:,3]] = feat[cluster_idx, k] 
+                    feat_map[idx[:,0], idx[:,1] + k, idx[:,2], idx[:,3]] = feat[cluster_idx, k]
+        if self.opt.data_type==16:
+            feat_map = feat_map.half()
         return feat_map
 
     def encode_features(self, image, inst):
@@ -241,7 +255,10 @@ class Pix2PixHDModel(BaseModel):
         edge[:,:,:,:-1] = edge[:,:,:,:-1] | (t[:,:,:,1:] != t[:,:,:,:-1])
         edge[:,:,1:,:] = edge[:,:,1:,:] | (t[:,:,1:,:] != t[:,:,:-1,:])
         edge[:,:,:-1,:] = edge[:,:,:-1,:] | (t[:,:,1:,:] != t[:,:,:-1,:])
-        return edge.float()
+        if self.opt.data_type==16:
+            return edge.half()
+        else:
+            return edge.float()
 
     def save(self, which_epoch):
         self.save_network(self.netG, 'G', which_epoch, self.gpu_ids)
@@ -254,8 +271,9 @@ class Pix2PixHDModel(BaseModel):
         params = list(self.netG.parameters())
         if self.gen_features:
             params += list(self.netE.parameters())           
-        self.optimizer_G = torch.optim.Adam(params, lr=self.opt.lr, betas=(self.opt.beta1, 0.999)) 
-        print('------------ Now also finetuning global generator -----------')
+        self.optimizer_G = torch.optim.Adam(params, lr=self.opt.lr, betas=(self.opt.beta1, 0.999))
+        if self.opt.verbose:
+            print('------------ Now also finetuning global generator -----------')
 
     def update_learning_rate(self):
         lrd = self.opt.lr / self.opt.niter_decay
@@ -264,5 +282,13 @@ class Pix2PixHDModel(BaseModel):
             param_group['lr'] = lr
         for param_group in self.optimizer_G.param_groups:
             param_group['lr'] = lr
-        print('update learning rate: %f -> %f' % (self.old_lr, lr))
+        if self.opt.verbose:
+            print('update learning rate: %f -> %f' % (self.old_lr, lr))
         self.old_lr = lr
+
+class InferenceModel(Pix2PixHDModel):
+    def forward(self, inp):
+        label, inst = inp
+        return self.inference(label, inst)
+
+        
