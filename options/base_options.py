@@ -18,6 +18,8 @@ class BaseOptions():
         self.parser.add_argument('--model', type=str, default='pix2pixHD', help='which model to use')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')        
         self.parser.add_argument('--use_dropout', action='store_true', help='use dropout for the generator')
+        self.parser.add_argument('--data_type', default=32, type=int, choices=[8, 16, 32], help="Supported data type i.e. 8, 16, 32 bit")
+        self.parser.add_argument('--verbose', action='store_true', default=False, help='toggles verbose')
 
         # input/output sizes       
         self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
@@ -56,8 +58,7 @@ class BaseOptions():
         self.parser.add_argument('--load_features', action='store_true', help='if specified, load precomputed feature maps')
         self.parser.add_argument('--n_downsample_E', type=int, default=4, help='# of downsampling layers in encoder') 
         self.parser.add_argument('--nef', type=int, default=16, help='# of encoder filters in the first conv layer')        
-        self.parser.add_argument('--n_clusters', type=int, default=10, help='number of clusters for features')
-        self.parser.add_argument('--verbose', action='store_true', default = False, help='toggles verbose')
+        self.parser.add_argument('--n_clusters', type=int, default=10, help='number of clusters for features')        
 
         self.initialized = True
 

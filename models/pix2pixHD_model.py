@@ -20,7 +20,7 @@ class Pix2PixHDModel(BaseModel):
     
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
-        if opt.resize_or_crop != 'none': # when training at full res this causes OOM
+        if opt.resize_or_crop != 'none' or not opt.isTrain: # when training at full res this causes OOM
             torch.backends.cudnn.benchmark = True
         self.isTrain = opt.isTrain
         self.use_features = opt.instance_feat or opt.label_feat
@@ -119,7 +119,7 @@ class Pix2PixHDModel(BaseModel):
             oneHot_size = (size[0], self.opt.label_nc, size[2], size[3])
             input_label = torch.cuda.FloatTensor(torch.Size(oneHot_size)).zero_()
             input_label = input_label.scatter_(1, label_map.data.long().cuda(), 1.0)
-            if self.opt.data_type==16:
+            if self.opt.data_type == 16:
                 input_label = input_label.half()
 
         # get edges from instance map
@@ -127,7 +127,7 @@ class Pix2PixHDModel(BaseModel):
             inst_map = inst_map.data.cuda()
             edge_map = self.get_edges(inst_map)
             input_label = torch.cat((input_label, edge_map), dim=1) 
-        input_label = Variable(input_label, requires_grad = not infer)
+        input_label = Variable(input_label, volatile=infer)
 
         # real images for training
         if real_image is not None:
@@ -202,8 +202,9 @@ class Pix2PixHDModel(BaseModel):
             feat_map = self.sample_features(inst_map)
             input_concat = torch.cat((input_label, feat_map), dim=1)                        
         else:
-            input_concat = input_label                
-        fake_image = self.netG.forward(input_concat)
+            input_concat = input_label        
+           
+        fake_image = self.netG.forward(input_concat)        
         return fake_image
 
     def sample_features(self, inst): 

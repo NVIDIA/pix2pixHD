@@ -2,6 +2,7 @@
 ### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import os
 from collections import OrderedDict
+from torch.autograd import Variable
 from options.test_options import TestOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
@@ -9,7 +10,6 @@ import util.util as util
 from util.visualizer import Visualizer
 from util import html
 import torch
-from run_engine import run_trt_engine, run_onnx
 
 opt = TestOptions().parse(save=False)
 opt.nThreads = 1   # test code only supports nThreads = 1
@@ -23,18 +23,19 @@ visualizer = Visualizer(opt)
 # create website
 web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.which_epoch))
 webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.which_epoch))
+
 # test
-
 if not opt.engine and not opt.onnx:
-        model = create_model(opt)
-        if opt.data_type == 16:
-            model.half()
-        elif opt.data_type == 8:
-            model.type(torch.uint8)
+    model = create_model(opt)
+    if opt.data_type == 16:
+        model.half()
+    elif opt.data_type == 8:
+        model.type(torch.uint8)
             
-        if opt.verbose:
-            print(model)
-
+    if opt.verbose:
+        print(model)
+else:
+    from run_engine import run_trt_engine, run_onnx
     
 for i, data in enumerate(dataset):
     if i >= opt.how_many:
@@ -56,7 +57,7 @@ for i, data in enumerate(dataset):
         generated = run_trt_engine(opt.engine, minibatch, [data['label'], data['inst']])
     elif opt.onnx:
         generated = run_onnx(opt.onnx, opt.data_type, minibatch, [data['label'], data['inst']])
-    else:
+    else:        
         generated = model.inference(data['label'], data['inst'])
         
     visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),

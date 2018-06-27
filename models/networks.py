@@ -280,14 +280,15 @@ class Encoder(nn.Module):
         outputs = self.model(input)
 
         # instance-wise average pooling
-        outputs_mean = outputs.clone()        
+        outputs_mean = outputs.clone()
         inst_list = np.unique(inst.cpu().numpy().astype(int))        
         for i in inst_list:
-            indices = (inst == i).nonzero() # n x 4            
-            for j in range(self.output_nc):
-                output_ins = outputs[indices[:,0], indices[:,1] + j, indices[:,2], indices[:,3]]                    
-                mean_feat = torch.mean(output_ins).expand_as(output_ins)                                        
-                outputs_mean[indices[:,0], indices[:,1] + j, indices[:,2], indices[:,3]] = mean_feat                        
+            for b in range(input.size()[0]):
+                indices = (inst[b:b+1] == int(i)).nonzero() # n x 4            
+                for j in range(self.output_nc):
+                    output_ins = outputs[indices[:,0] + b, indices[:,1] + j, indices[:,2], indices[:,3]]                    
+                    mean_feat = torch.mean(output_ins).expand_as(output_ins)                                        
+                    outputs_mean[indices[:,0] + b, indices[:,1] + j, indices[:,2], indices[:,3]] = mean_feat                       
         return outputs_mean
 
 class MultiscaleDiscriminator(nn.Module):
