@@ -3,12 +3,12 @@
 <br><br><br><br>
 
 # pix2pixHD
-### [[Project]](https://tcwang0509.github.io/pix2pixHD/) [[Youtube]](https://youtu.be/3AIpPlzM_qs) [[Paper]](https://arxiv.org/pdf/1711.11585.pdf) <br>
+### [[Project]](https://tcwang0509.github.io/pix2pixHD/) [[Youtube]](https://youtu.be/3AIpPlzM_qs) [[Paper]](https://arxiv.org/pdf/1711.11585.pdf) [[Slides]](https://drive.google.com/open?id=1pObGZvEgPILtRsqEP07sv8CtNuQ55xur) <br>
 Pytorch implementation of our method for high-resolution (e.g. 2048x1024) photorealistic image-to-image translation. It can be used for turning semantic label maps into photo-realistic images or synthesizing portraits from face label maps. <br><br>
 [High-Resolution Image Synthesis and Semantic Manipulation with Conditional GANs](https://tcwang0509.github.io/pix2pixHD/)  
  [Ting-Chun Wang](https://tcwang0509.github.io/)<sup>1</sup>, [Ming-Yu Liu](http://mingyuliu.net/)<sup>1</sup>, [Jun-Yan Zhu](http://people.eecs.berkeley.edu/~junyanz/)<sup>2</sup>, Andrew Tao<sup>1</sup>, [Jan Kautz](http://jankautz.com/)<sup>1</sup>, [Bryan Catanzaro](http://catanzaro.name/)<sup>1</sup>  
  <sup>1</sup>NVIDIA Corporation, <sup>2</sup>UC Berkeley  
- In arxiv, 2017.  
+ In CVPR, 2018.  
 
 ## Image-to-image translation at 2k/1k resolution
 - Our label-to-streetview results
@@ -123,11 +123,11 @@ If only GPUs with 12G memory are available, please use the 12G script (`bash ./s
 If you find this useful for your research, please use the following.
 
 ```
-@article{wang2017highres,
+@inproceedings{wang2018pix2pixHD,
   title={High-Resolution Image Synthesis and Semantic Manipulation with Conditional GANs},
-  author={Ting-Chun Wang and Ming-Yu Liu and Jun-Yan Zhu and Andrew Tao and Jan Kautz and Bryan Catanzaro},
-  journal={arXiv preprint arXiv:1711.11585},
-  year={2017}
+  author={Ting-Chun Wang and Ming-Yu Liu and Jun-Yan Zhu and Andrew Tao and Jan Kautz and Bryan Catanzaro},  
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  year={2018}
 }
 ```
 
