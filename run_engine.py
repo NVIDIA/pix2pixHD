@@ -1,8 +1,6 @@
 import os
 import sys
-from random import randint
 import numpy as np
-import tensorrt
 
 try:
     from PIL import Image
