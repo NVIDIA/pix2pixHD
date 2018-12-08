@@ -76,7 +76,7 @@ class BaseModel(torch.nn.Module):
                         if v.size() == model_dict[k].size():
                             model_dict[k] = v
 
-                    if sys.version_info >= (3,0):
+                    if sys.version_info >= (2, 6):
                         not_initialized = set()
                     else:
                         from sets import Set

@@ -86,7 +86,7 @@ class Pix2PixHDModel(BaseModel):
             # optimizer G
             if opt.niter_fix_global > 0:                
                 import sys
-                if sys.version_info >= (3,0):
+                if sys.version_info >= (2, 6):
                     finetune_list = set()
                 else:
                     from sets import Set
