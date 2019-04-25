@@ -103,9 +103,18 @@ python train.py --name label2city_512p --batchSize 8 --gpu_ids 0,1,2,3,4,5,6,7
 ```
 Note: this is not tested and we trained our model using single GPU only. Please use at your own discretion.
 
+### Training with Automatic Mixed Precision (AMP) for faster speed
+- To train with mixed precision support, please first install apex from: https://github.com/NVIDIA/apex
+- You can then train the model by adding `--fp16`. For example,
+```bash
+#!./scripts/train_512p_fp16.sh
+python -m torch.distributed.launch train.py --name label2city_512p --fp16
+```
+In our test case, it trains about 80% faster with AMP on a Volta machine.
+
 ### Training at full resolution
-- To train the images at full resolution (2048 x 1024) requires a GPU with 24G memory (`bash ./scripts/train_1024p_24G.sh`).
-If only GPUs with 12G memory are available, please use the 12G script (`bash ./scripts/train_1024p_12G.sh`), which will crop the images during training. Performance is not guaranteed using this script.
+- To train the images at full resolution (2048 x 1024) requires a GPU with 24G memory (`bash ./scripts/train_1024p_24G.sh`), or 16G memory if using mixed precision (AMP).
+- If only GPUs with 12G memory are available, please use the 12G script (`bash ./scripts/train_1024p_12G.sh`), which will crop the images during training. Performance is not guaranteed using this script.
 
 ### Training with your own dataset
 - If you want to train with your own dataset, please generate label maps which are one-channel whose pixel values correspond to the object labels (i.e. 0,1,...,N-1, where N is the number of labels). This is because we need to generate one-hot vectors from the label maps. Please also specity `--label_nc N` during both training and testing.

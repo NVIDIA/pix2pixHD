@@ -1,16 +1,21 @@
 ### Copyright (C) 2017 NVIDIA Corporation. All rights reserved. 
 ### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import time
+import os
+import numpy as np
+import torch
+from torch.autograd import Variable
 from collections import OrderedDict
+from subprocess import call
+from apex import amp
+import fractions
+def lcm(a,b): return abs(a * b)/fractions.gcd(a,b) if a and b else 0
+
 from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
 import util.util as util
 from util.visualizer import Visualizer
-import os
-import numpy as np
-import torch
-from torch.autograd import Variable
 
 opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
@@ -23,6 +28,7 @@ if opt.continue_train:
 else:    
     start_epoch, epoch_iter = 1, 0
 
+opt.print_freq = lcm(opt.print_freq, opt.batchSize)    
 if opt.debug:
     opt.display_freq = 1
     opt.print_freq = 1
@@ -37,6 +43,11 @@ print('#training images = %d' % dataset_size)
 
 model = create_model(opt)
 visualizer = Visualizer(opt)
+if opt.fp16:    
+    model, [optimizer_G, optimizer_D] = amp.initialize(model, [model.optimizer_G, model.optimizer_D], opt_level='O1')             
+    model = torch.nn.DataParallel(model, device_ids=opt.gpu_ids)
+else:
+    optimizer_G, optimizer_D = model.module.optimizer_G, model.module.optimizer_D
 
 total_steps = (start_epoch-1) * dataset_size + epoch_iter
 
@@ -49,7 +60,8 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     if epoch != start_epoch:
         epoch_iter = epoch_iter % dataset_size
     for i, data in enumerate(dataset, start=epoch_iter):
-        iter_start_time = time.time()
+        if total_steps % opt.print_freq == print_delta:
+            iter_start_time = time.time()
         total_steps += opt.batchSize
         epoch_iter += opt.batchSize
 
@@ -70,24 +82,29 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         ############### Backward Pass ####################
         # update generator weights
-        model.module.optimizer_G.zero_grad()
-        loss_G.backward()
-        model.module.optimizer_G.step()
+        optimizer_G.zero_grad()
+        if opt.fp16:                                
+            with amp.scale_loss(loss_G, optimizer_G) as scaled_loss: scaled_loss.backward()                
+        else:
+            loss_G.backward()          
+        optimizer_G.step()
 
         # update discriminator weights
-        model.module.optimizer_D.zero_grad()
-        loss_D.backward()
-        model.module.optimizer_D.step()
-
-        #call(["nvidia-smi", "--format=csv", "--query-gpu=memory.used,memory.free"]) 
+        optimizer_D.zero_grad()
+        if opt.fp16:                                
+            with amp.scale_loss(loss_D, optimizer_D) as scaled_loss: scaled_loss.backward()                
+        else:
+            loss_D.backward()        
+        optimizer_D.step()        
 
         ############## Display results and errors ##########
         ### print out errors
         if total_steps % opt.print_freq == print_delta:
-            errors = {k: v.data[0] if not isinstance(v, int) else v for k, v in loss_dict.items()}
-            t = (time.time() - iter_start_time) / opt.batchSize
+            errors = {k: v.data.item() if not isinstance(v, int) else v for k, v in loss_dict.items()}            
+            t = (time.time() - iter_start_time) / opt.print_freq
             visualizer.print_current_errors(epoch, epoch_iter, errors, t)
             visualizer.plot_current_errors(errors, total_steps)
+            #call(["nvidia-smi", "--format=csv", "--query-gpu=memory.used,memory.free"]) 
 
         ### display output images
         if save_fake:
