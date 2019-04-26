@@ -4,7 +4,6 @@ import torch
 from torch.autograd import Variable
 from collections import OrderedDict
 import numpy as np
-import os
 from PIL import Image
 import util.util as util
 from .base_model import BaseModel

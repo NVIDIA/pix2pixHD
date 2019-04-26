@@ -57,7 +57,7 @@ class BaseModel(torch.nn.Module):
         if not os.path.isfile(save_path):
             print('%s not exists yet!' % save_path)
             if network_label == 'G':
-                raise('Generator must exist!')
+                raise NotImplementedError('Generator must exist!')
         else:
             #network.load_state_dict(torch.load(save_path))
             try:
@@ -76,7 +76,7 @@ class BaseModel(torch.nn.Module):
                         if v.size() == model_dict[k].size():
                             model_dict[k] = v
 
-                    if sys.version_info >= (3,0):
+                    if sys.version_info >= (2, 6):
                         not_initialized = set()
                     else:
                         from sets import Set
