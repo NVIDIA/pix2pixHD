@@ -1,5 +1,3 @@
-### Copyright (C) 2017 NVIDIA Corporation. All rights reserved. 
-### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import time
 import os
 import numpy as np
@@ -7,7 +5,6 @@ import torch
 from torch.autograd import Variable
 from collections import OrderedDict
 from subprocess import call
-from apex import amp
 import fractions
 def lcm(a,b): return abs(a * b)/fractions.gcd(a,b) if a and b else 0
 
@@ -44,6 +41,7 @@ print('#training images = %d' % dataset_size)
 model = create_model(opt)
 visualizer = Visualizer(opt)
 if opt.fp16:    
+    from apex import amp
     model, [optimizer_G, optimizer_D] = amp.initialize(model, [model.optimizer_G, model.optimizer_D], opt_level='O1')             
     model = torch.nn.DataParallel(model, device_ids=opt.gpu_ids)
 else:
