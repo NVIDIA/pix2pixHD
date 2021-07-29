@@ -1,7 +1,5 @@
 from flask import Flask, jsonify, request
 
-from src.token_generator import get_random_string
-from src.word2vec import train, preprocess, search
 import uuid
 from flask_cors import CORS, cross_origin
 import os
@@ -20,7 +18,6 @@ app = Flask(__name__)
 CORS(app)
 app.config["FLASK_DEBUG"] = False
 
-
 # query_params = request.values[0]
 # body_form_data = request.values[1]
 # body_raw_json = request.json
@@ -29,10 +26,11 @@ app.config["FLASK_DEBUG"] = False
 @cross_origin()
 def post_mask():
     if request.method == 'POST':
+        data=dict()
         label_img = request.files['label']
-        inst_img = request.files['label']
-        data['label'] = transforms.ToTensor()(Image.open(label_img.stream)
-        data['inst'] = transforms.ToTensor()(Image.open(inst_img.stream)
+        inst_img = request.files['inst']
+        data['label'] = transforms.ToTensor()(Image.open(label_img.stream))
+        data['inst'] = transforms.ToTensor()(Image.open(inst_img.stream))
         data = request.values
         if opt.data_type == 16:
             data['label'] = data['label'].half()
@@ -57,8 +55,10 @@ def post_mask():
         visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
                                ('synthesized_image', util.tensor2im(generated.data[0]))])
         image_pil = Image.fromarray(generated.data[0])
+        img_path = str(uuid.uuid1())
         print('process image... %s' % img_path)
-        return visuals
+        visualizer.save_images(webpage, visuals, img_path)
+        return send_file(img_path, mimetype='image/gif')
 
 
 if __name__ == '__main__':
