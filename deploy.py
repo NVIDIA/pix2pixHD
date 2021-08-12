@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 
 import uuid
 from flask_cors import CORS, cross_origin
@@ -13,6 +13,9 @@ from util.visualizer import Visualizer
 from util import html
 import torch
 from torchvision import transforms
+from PIL import Image
+import numpy as np
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +25,12 @@ app.config["FLASK_DEBUG"] = False
 # body_form_data = request.values[1]
 # body_raw_json = request.json
 
+def serve_pil_image(pil_img):
+    img_io = BytesIO()
+    pil_img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/jpeg')
+
 @app.route('/mask/', methods=['POST'])
 @cross_origin()
 def post_mask():
@@ -29,9 +38,15 @@ def post_mask():
         data=dict()
         label_img = request.files['label']
         inst_img = request.files['inst']
-        data['label'] = transforms.ToTensor()(Image.open(label_img.stream))
-        data['inst'] = transforms.ToTensor()(Image.open(inst_img.stream))
-        data = request.values
+        label_img_load = np.asarray(Image.open(label_img.stream).convert('L'))
+        inst_img_load = np.asarray(Image.open(inst_img.stream).convert('L'))
+        data['label'] = torch.tensor([[label_img_load]])
+        data['inst'] = torch.tensor([[inst_img_load]])
+        # data['label'] = transforms.ToTensor()()
+        # data['inst'] = transforms.ToTensor()(Image.open(inst_img.stream).convert('L'))
+        data['image'] = torch.tensor([0])
+        data['feat'] = torch.tensor([0])
+        data['path'] =  ['./temp/0.jpg']
         if opt.data_type == 16:
             data['label'] = data['label'].half()
             data['inst'] = data['inst'].half()
@@ -54,11 +69,8 @@ def post_mask():
 
         visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
                                ('synthesized_image', util.tensor2im(generated.data[0]))])
-        image_pil = Image.fromarray(generated.data[0])
-        img_path = str(uuid.uuid1())
-        print('process image... %s' % img_path)
-        visualizer.save_images(webpage, visuals, img_path)
-        return send_file(img_path, mimetype='image/gif')
+        image_pil = Image.fromarray(util.tensor2im(generated.data[0]))
+        return serve_pil_image(image_pil)
 
 
 if __name__ == '__main__':
@@ -87,5 +99,5 @@ if __name__ == '__main__':
             print(model)
     else:
         from run_engine import run_trt_engine, run_onnx
-    app.run()
+    app.run(host='0.0.0.0')
 
