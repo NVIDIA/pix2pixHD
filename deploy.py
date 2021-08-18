@@ -37,7 +37,7 @@ def post_mask():
     if request.method == 'POST':
         data=dict()
         label_img = request.files['label']
-        inst_img = request.files['inst']
+        inst_img = label_img
         label_img_load = np.asarray(Image.open(label_img.stream).convert('L'))
         inst_img_load = np.asarray(Image.open(inst_img.stream).convert('L'))
         data['label'] = torch.tensor([[label_img_load]])
