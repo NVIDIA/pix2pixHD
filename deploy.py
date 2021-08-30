@@ -17,6 +17,7 @@ from PIL import Image
 import numpy as np
 from io import BytesIO
 import ShadowMaker
+import ShadowMaker2
 
 app = Flask(__name__)
 CORS(app)
@@ -33,6 +34,14 @@ def serve_pil_image(inputImage,pil_img):
     pil_img.save(img_io,'JPEG',quality=100)
     img_io.seek(0)
     return send_file(img_io, mimetype='image/jpeg')
+
+def serveImage(npInput,pil_img):
+    img_io = BytesIO()
+    shadow = ShadowMaker2.drawShadow(npInput,18,120,120)
+    pil_img.paste(shadow,(0,0),shadow)
+    pil_img.save(img_io,'PNG')
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/png')
 
 @app.route('/mask/', methods=['POST'])
 @cross_origin()
@@ -73,7 +82,7 @@ def post_mask():
         visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
                                ('synthesized_image', util.tensor2im(generated.data[0]))])
         image_pil = Image.fromarray(util.tensor2im(generated.data[0]))
-        return serve_pil_image(Image.open(label_img.stream).convert('L'),image_pil)
+        return serveImage(label_img_load,image_pil)
 
 
 if __name__ == '__main__':
