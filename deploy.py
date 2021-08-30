@@ -16,6 +16,7 @@ from torchvision import transforms
 from PIL import Image
 import numpy as np
 from io import BytesIO
+import ShadowMaker
 
 app = Flask(__name__)
 CORS(app)
@@ -25,9 +26,11 @@ app.config["FLASK_DEBUG"] = False
 # body_form_data = request.values[1]
 # body_raw_json = request.json
 
-def serve_pil_image(pil_img):
+def serve_pil_image(inputImage,pil_img):
     img_io = BytesIO()
-    pil_img.save(img_io, 'JPEG', quality=70)
+    shadow = ShadowMaker.shadow4Building(inputImage,45,120)
+    pil_img.paste(shadow,(0,0),shadow)
+    pil_img.save(img_io,'JPEG',quality=100)
     img_io.seek(0)
     return send_file(img_io, mimetype='image/jpeg')
 
@@ -70,7 +73,7 @@ def post_mask():
         visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
                                ('synthesized_image', util.tensor2im(generated.data[0]))])
         image_pil = Image.fromarray(util.tensor2im(generated.data[0]))
-        return serve_pil_image(image_pil)
+        return serve_pil_image(Image.open(label_img.stream).convert('L'),image_pil)
 
 
 if __name__ == '__main__':
