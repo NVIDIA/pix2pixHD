@@ -115,12 +115,13 @@ def post_mask():
         BuildShadow = ray.get(task1)
         TreeImage = ray.get(task2)
 
+        RendImage = Rendering(label_img_load)
+
+
         while len(ids):
             a,ids = ray.wait(ids)
             
-
-        RendImage = Rendering.remote(label_img_load)
-
+            
         RendImage.paste(TreeImage,(0,0),TreeImage)
         RendImage.paste(BuildShadow,(0,0),BuildShadow)
         
