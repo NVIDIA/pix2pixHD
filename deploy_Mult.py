@@ -69,12 +69,7 @@ def taskTnB(label_img_load,Imagesize,result):
 
 
 
-def Rendering(opt,label_img_load,result):
-    model = create_model(opt)
-    if opt.data_type == 16:
-        model.half()
-    elif opt.data_type == 8:
-        model.type(torch.uint8)
+def Rendering(model,opt,label_img_load,result):
     data=dict()
     data['inst'] = data['label'] = torch.tensor([[label_img_load]])
     data['feat'] = data['image'] = torch.tensor([0])
@@ -115,7 +110,7 @@ def post_mask():
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
-        task1 = Process(target = Rendering, args=(opt,label_img_load,result))
+        task1 = Process(target = Rendering, args=(model,opt,label_img_load,result))
         task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size,result))
 
         task1.start()
