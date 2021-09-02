@@ -109,8 +109,16 @@ def post_mask():
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
-        BuildShadow = ray.get(taskBuildingShadow.remote(label_img_load))
-        TreeImage = ray.get(taskTreePlant.remote(label_pil.size))
+        task1 = taskBuildingShadow.remote(label_img_load)
+        task2 = taskTreePlant.remote(label_pil.size)
+
+        BuildShadow = ray.get(task1)
+        TreeImage = ray.get(task2)
+
+        while True:
+            if len(ray.wait([task1,task2])[1])==0:
+                break
+            
 
         RendImage = Rendering.remote(label_img_load)
 
