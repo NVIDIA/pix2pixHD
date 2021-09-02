@@ -69,7 +69,6 @@ def taskTreePlant(Imagesize):
 
     return Image.fromarray(TreeImage).convert("RGBA")
 
-@ray.remote
 def Rendering(label_img_load):
     data=dict()
     inst_img_load = label_img_load
@@ -108,11 +107,12 @@ def post_mask():
         
         label_img = request.files['label']
         label_pil = Image.open(label_img.stream).convert('L')
-        label_img_load = ray.put(np.asarray(label_pil))
+        label_img_load = np.asarray(label_pil)
 
-        RendImage = ray.get(Rendering.remote(label_img_load))
         BuildShadow = ray.get(taskBuildingShadow.remote(label_img_load))
         TreeImage = ray.get(taskTreePlant.remote(label_pil.size))
+
+        RendImage = Rendering.remote(label_img_load)
 
         RendImage.paste(TreeImage,(0,0),TreeImage)
         RendImage.paste(BuildShadow,(0,0),BuildShadow)

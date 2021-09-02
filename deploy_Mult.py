@@ -12,7 +12,6 @@ import util.util as util
 from util.visualizer import Visualizer
 from util import html
 import torch
-import torch.multiprocessing as mp
 from torchvision import transforms
 from PIL import Image
 import numpy as np
