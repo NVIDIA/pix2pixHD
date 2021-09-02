@@ -3,8 +3,18 @@ import numpy as np
 import math
 
 
-def drawShadow(image,colorCode,angle,size):
-    imageNp = np.array(image)
+def drawShadow(imageNp,colorCode,angle,size):
+    """ draw shadow for input color code.
+    it return only shadow image
+    Args:
+        image : numpy Image (PIL)
+        colorCode : int
+        angle : degree Angle 3'o clock is 0 degree
+        size : approximate height of the object that wan't to make shadow, ex Building->120
+
+    Return:
+        PIL image
+    """
     mask = imageNp == colorCode
     mask = Image.fromarray(mask)
     doIndex = np.where(imageNp == colorCode)
