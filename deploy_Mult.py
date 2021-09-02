@@ -25,9 +25,7 @@ import cv2
 app = Flask(__name__)
 CORS(app)
 app.config["FLASK_DEBUG"] = False
-if __name__ == '__main__':
-    manager = Manager()
-    result = manager.dict()
+
 # query_params = request.values[0]
 # body_form_data = request.values[1]
 # body_raw_json = request.json
@@ -49,7 +47,7 @@ if __name__ == '__main__':
 #     return send_file(img_io, mimetype='image/png')
 
 
-def taskTnB(label_img_load,Imagesize):
+def taskTnB(label_img_load,Imagesize,result):
     shadow = ShadowMaker2.drawShadow(label_img_load,18,120,120)
 
     Blank = np.zeros((Imagesize[1],Imagesize[0],4),np.uint8)
@@ -71,7 +69,7 @@ def taskTnB(label_img_load,Imagesize):
 
 
 
-def Rendering(label_img_load):
+def Rendering(label_img_load,result):
     opt = result["opt"]
     model = result["model"]
     data=dict()
@@ -113,8 +111,8 @@ def post_mask():
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
-        task1 = Process(target = Rendering, args=(label_img_load))
-        task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size))
+        task1 = Process(target = Rendering, args=(label_img_load,result))
+        task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size,result))
 
         task1.start()
         task2.start()
@@ -130,6 +128,8 @@ def post_mask():
 
         
 if __name__ == '__main__':
+    manager = Manager()
+    result = manager.dict()
     mp.set_start_method('spawn',force=True)
 
     opt = TestOptions().parse(save=False)
