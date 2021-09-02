@@ -110,9 +110,9 @@ def post_mask():
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = ray.put(np.asarray(label_pil))
 
-        RendImage = ray.get(Rendering(label_img_load))
-        BuildShadow = ray.get(taskBuildingShadow(label_img_load))
-        TreeImage = ray.get(taskTreePlant(label_pil.size))
+        RendImage = ray.get(Rendering.remote(label_img_load))
+        BuildShadow = ray.get(taskBuildingShadow.remote(label_img_load))
+        TreeImage = ray.get(taskTreePlant.remote(label_pil.size))
 
         RendImage.paste(TreeImage,(0,0),TreeImage)
         RendImage.paste(BuildShadow,(0,0),BuildShadow)
