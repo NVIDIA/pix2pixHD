@@ -3,8 +3,8 @@ import numpy as np
 import math
 
 
-def drawShadow(imageNp,colorCode,angle,size):
-    # imageNp = np.array(image)
+def drawShadow(image,colorCode,angle,size):
+    imageNp = np.array(image)
     mask = imageNp == colorCode
     mask = Image.fromarray(mask)
     doIndex = np.where(imageNp == colorCode)
@@ -19,15 +19,18 @@ def drawShadow(imageNp,colorCode,angle,size):
     # for i,v in enumerate(doIndex[0]):
     #     Shadow.putpixel((doIndex[1][i],doIndex[0][i]),(0,0,0,0))
 
-    newImage = Image.new("RGBA",image.size,(255,255,255,0))
-    newImage.paste(image,(0,0),Shadow)
-    im = Image.composite(newImage,Shadow,mask).convert("RGBA")
-    return im
+    blank = Image.new("RGBA",mask.size,(0,0,0,0))
+    Shadow.paste(blank,(0,0),mask)
+    return Shadow
+
+
 
 if __name__ == "__main__":
     import time
     start = time.time()
-    image = Image.open("1-1.png")
-    drawShadow(image,18,45,120)
-    print("time :", time.time() - start)
+    image = Image.open("0 copy.png").convert("L")
+    shadow = drawShadow(image,18,180,120)
+    image = Image.open("0.png")
+    image.paste(shadow,(0,0),shadow)
+    image.save("BulidingShadow.png")
     
