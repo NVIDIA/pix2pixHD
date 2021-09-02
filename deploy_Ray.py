@@ -111,13 +111,12 @@ def post_mask():
 
         task1 = taskBuildingShadow.remote(label_img_load)
         task2 = taskTreePlant.remote(label_pil.size)
-
+        ids = [task1,task2]
         BuildShadow = ray.get(task1)
         TreeImage = ray.get(task2)
 
-        while True:
-            if len(ray.wait([task1,task2])[1])==0:
-                break
+        while len(ids):
+            a,ids = ray.wait(ids)
             
 
         RendImage = Rendering.remote(label_img_load)
