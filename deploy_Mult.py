@@ -12,6 +12,7 @@ import util.util as util
 from util.visualizer import Visualizer
 from util import html
 import torch
+import torch.multiprocessing as mp
 from torchvision import transforms
 from PIL import Image
 import numpy as np
@@ -127,6 +128,8 @@ def post_mask():
 
         
 if __name__ == '__main__':
+    mp.set_start_method('spawn',force=True)
+
     opt = TestOptions().parse(save=False)
     opt.nThreads = 1  # test code only supports nThreads = 1
     opt.batchSize = 1  # test code only supports batchSize = 1

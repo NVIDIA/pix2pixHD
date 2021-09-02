@@ -49,37 +49,6 @@ def overlay_transparent(background, overlay, x, y):
     return background
 
     
-
-def plantTreeCV(imageNpArray,positionList,LandscapeNp,angle):
-    """ plant the tree at the position which in the position list
-        need Tree image array that conclude with the three different color
-        it will put the tree shadow too
-
-        Args:
-            imageNpArray : Tree Image array (cv2 numpy image array)
-            positionList : list of the x,y point lists that want to plant the tree(mid point) 
-            LandscapeNp : Back ground image (cv2 numpy image)
-            angle : the degree angle of the tree shadow. 3'o clock is 0 degree
-
-        Return:
-            numpy image (cv2)
-    """
-    i=0
-    w,h,c = imageNpArray[0].shape
-    positionList = np.array(positionList)
-    positionList -= [w//2,h//2]
-
-    angle = math.radians(angle)*-1
-    size = w//8+h//8
-    for pos in positionList:
-        shadowDest = (int(pos[0]+size*math.cos(angle)),int(pos[1]+size*math.sin(angle)))
-        # LandscapeNp = pasteImage(LandscapeNp,makeTreeShadow(imageNpArray[i%3]),shadowDest)
-        # LandscapeNp = pasteImage(LandscapeNp,imageNpArray[i%3],pos)
-        LandscapeNp = overlay_transparent(LandscapeNp,makeTreeShadow(imageNpArray[i%3]),shadowDest[0],shadowDest[1])
-        LandscapeNp = overlay_transparent(LandscapeNp,imageNpArray[i%3],pos[0],pos[1])
-        i+=1
-    return LandscapeNp
-
 def makeThree(imageNp,weight):
     """ make the tree more various color(more greener only)
         use weight for the greener amount
@@ -96,6 +65,38 @@ def makeThree(imageNp,weight):
     for w in range(3):
         ImageArray.append(imageNp+change*w)
     return ImageArray
+
+
+def plantTreeCV(imageNp,positionList,LandscapeNp,angle):
+    """ plant the tree at the position which in the position list
+        need Tree image array that conclude with the three different color
+        it will put the tree shadow too
+
+        Args:
+            imageNp : Tree Image (cv2 numpy image)
+            positionList : list of the x,y point lists that want to plant the tree(mid point) 
+            LandscapeNp : Back ground image (cv2 numpy image)
+            angle : the degree angle of the tree shadow. 3'o clock is 0 degree
+
+        Return:
+            numpy image (cv2)
+    """
+    imageNpArray = makeThree(imageNp,15)
+    i=0
+    w,h,c = imageNpArray[0].shape
+    positionList = np.array(positionList)
+    positionList -= [w//2,h//2]
+
+    angle = math.radians(angle)*-1
+    size = w//8+h//8
+    for pos in positionList:
+        shadowDest = (int(pos[0]+size*math.cos(angle)),int(pos[1]+size*math.sin(angle)))
+        # LandscapeNp = pasteImage(LandscapeNp,makeTreeShadow(imageNpArray[i%3]),shadowDest)
+        # LandscapeNp = pasteImage(LandscapeNp,imageNpArray[i%3],pos)
+        LandscapeNp = overlay_transparent(LandscapeNp,makeTreeShadow(imageNpArray[i%3]),shadowDest[0],shadowDest[1])
+        LandscapeNp = overlay_transparent(LandscapeNp,imageNpArray[i%3],pos[0],pos[1])
+        i+=1
+    return LandscapeNp
 
 def makeTreeShadow(tree):
     b,g,r,a = cv2.split(tree)
