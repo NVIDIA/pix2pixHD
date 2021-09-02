@@ -70,8 +70,6 @@ def taskTnB(label_img_load,Imagesize,result):
 
 
 def Rendering(label_img_load,result):
-    opt = result["opt"]
-    model = result["model"]
     data=dict()
     data['inst'] = data['label'] = torch.tensor([[label_img_load]])
     data['feat'] = data['image'] = torch.tensor([0])
@@ -110,13 +108,10 @@ def post_mask():
         label_img = request.files['label']
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
-
-        task1 = Process(target = Rendering, args=(label_img_load,result))
         task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size,result))
-
-        task1.start()
         task2.start()
-        task1.join()
+        Rendering(label_img_load,result)
+
         task2.join()
 
         result["Rendering"].paste(result["TnB"],(0,0),result["TnB"])
@@ -130,7 +125,6 @@ def post_mask():
 if __name__ == '__main__':
     manager = Manager()
     result = manager.dict()
-    mp.set_start_method('spawn',force=True)
 
     opt = TestOptions().parse(save=False)
     opt.nThreads = 1  # test code only supports nThreads = 1
@@ -157,7 +151,7 @@ if __name__ == '__main__':
             print(model)
     else:
         from run_engine import run_trt_engine, run_onnx
-    result["opt"] = opt
-    result["model"] = model
+
+
     app.run(host='0.0.0.0')
 
