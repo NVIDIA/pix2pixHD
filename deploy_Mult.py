@@ -62,7 +62,7 @@ def taskTnB(label_img_load,Imagesize,result):
         [100,1000]]
     TreeImage = TreePlant.plantTreeCV(tree,posList,Blank,120)
     TreeImage = cv2.cvtColor(TreeImage, cv2.COLOR_BGRA2RGBA)
-    Image.fromarray(TreeImage).convert("RGBA")
+    TreeImage = Image.fromarray(TreeImage).convert("RGBA")
     TreeImage.paste(shadow,(0,0),shadow)
     result["TnB"] =  Image.fromarray(TreeImage).convert("RGBA")
     return
@@ -70,8 +70,12 @@ def taskTnB(label_img_load,Imagesize,result):
 
 
 def Rendering(opt,label_img_load,result):
+    model = create_model(opt)
+    if opt.data_type == 16:
+        model.half()
+    elif opt.data_type == 8:
+        model.type(torch.uint8)
     data=dict()
-    inst_img_load = label_img_load
     data['inst'] = data['label'] = torch.tensor([[label_img_load]])
     data['feat'] = data['image'] = torch.tensor([0])
     # data['path'] =  ['./temp/0.jpg']
@@ -94,7 +98,6 @@ def Rendering(opt,label_img_load,result):
         generated = run_onnx(opt.onnx, opt.data_type, minibatch, [data['label'], data['inst']])
     else:
         generated = model.inference(data['label'], data['inst'], data['image'])
-
     visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
                             ('synthesized_image', util.tensor2im(generated.data[0]))])
     image_pil = Image.fromarray(util.tensor2im(generated.data[0]))
