@@ -25,8 +25,7 @@ import cv2
 app = Flask(__name__)
 CORS(app)
 app.config["FLASK_DEBUG"] = False
-manager = Manager()
-result = manager.dict()
+
 # query_params = request.values[0]
 # body_form_data = request.values[1]
 # body_raw_json = request.json
@@ -129,6 +128,8 @@ def post_mask():
 
         
 if __name__ == '__main__':
+    manager = Manager()
+    result = manager.dict()
     mp.set_start_method('spawn',force=True)
 
     opt = TestOptions().parse(save=False)
