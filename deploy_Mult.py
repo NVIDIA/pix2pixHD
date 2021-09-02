@@ -25,7 +25,8 @@ import cv2
 app = Flask(__name__)
 CORS(app)
 app.config["FLASK_DEBUG"] = False
-
+manager = Manager()
+result = manager.dict()
 # query_params = request.values[0]
 # body_form_data = request.values[1]
 # body_raw_json = request.json
@@ -47,7 +48,7 @@ app.config["FLASK_DEBUG"] = False
 #     return send_file(img_io, mimetype='image/png')
 
 
-def taskTnB(label_img_load,Imagesize,result):
+def taskTnB(label_img_load,Imagesize):
     shadow = ShadowMaker2.drawShadow(label_img_load,18,120,120)
 
     Blank = np.zeros((Imagesize[1],Imagesize[0],4),np.uint8)
@@ -69,7 +70,9 @@ def taskTnB(label_img_load,Imagesize,result):
 
 
 
-def Rendering(model,opt,label_img_load,result):
+def Rendering(label_img_load):
+    opt = result["opt"]
+    model = result["model"]
     data=dict()
     data['inst'] = data['label'] = torch.tensor([[label_img_load]])
     data['feat'] = data['image'] = torch.tensor([0])
@@ -103,15 +106,14 @@ def Rendering(model,opt,label_img_load,result):
 @cross_origin()
 def post_mask():
     if request.method == 'POST':
-        manager = Manager()
-        result = manager.dict()
+
 
         label_img = request.files['label']
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
-        task1 = Process(target = Rendering, args=(model,opt,label_img_load,result))
-        task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size,result))
+        task1 = Process(target = Rendering, args=(label_img_load))
+        task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size))
 
         task1.start()
         task2.start()
@@ -154,5 +156,7 @@ if __name__ == '__main__':
             print(model)
     else:
         from run_engine import run_trt_engine, run_onnx
+    result["opt"] = opt
+    result["model"] = model
     app.run(host='0.0.0.0')
 
