@@ -64,7 +64,7 @@ def taskTnB(label_img_load,Imagesize,result):
     TreeImage = cv2.cvtColor(TreeImage, cv2.COLOR_BGRA2RGBA)
     TreeImage = Image.fromarray(TreeImage).convert("RGBA")
     TreeImage.paste(shadow,(0,0),shadow)
-    result["TnB"] =  Image.fromarray(TreeImage).convert("RGBA")
+    result["TnB"] = TreeImage.convert("RGBA")
     return
 
 
