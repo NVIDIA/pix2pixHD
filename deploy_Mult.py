@@ -62,13 +62,14 @@ def taskTnB(label_img_load,Imagesize,result):
         [100,1000]]
     TreeImage = TreePlant.plantTreeCV(tree,posList,Blank,120)
     TreeImage = cv2.cvtColor(TreeImage, cv2.COLOR_BGRA2RGBA)
+    Image.fromarray(TreeImage).convert("RGBA")
     TreeImage.paste(shadow,(0,0),shadow)
     result["TnB"] =  Image.fromarray(TreeImage).convert("RGBA")
     return
 
 
 
-def Rendering(label_img_load,result):
+def Rendering(opt,label_img_load,result):
     data=dict()
     inst_img_load = label_img_load
     data['inst'] = data['label'] = torch.tensor([[label_img_load]])
@@ -111,7 +112,7 @@ def post_mask():
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
-        task1 = Process(target = Rendering, args=(label_img_load,result))
+        task1 = Process(target = Rendering, args=(opt,label_img_load,result))
         task2 = Process(target=taskTnB, args=(label_img_load,label_pil.size,result))
 
         task1.start()
