@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, send_file
-
+import threading
 import uuid
 from flask_cors import CORS, cross_origin
 import os
@@ -98,6 +98,7 @@ def Rendering(label_img_load):
     visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
                             ('synthesized_image', util.tensor2im(generated.data[0]))])
     image_pil = Image.fromarray(util.tensor2im(generated.data[0]))
+    lock.release()
     return image_pil
 
 @app.route('/mask/', methods=['POST'])
@@ -132,6 +133,7 @@ def post_mask():
 
         
 if __name__ == '__main__':
+    lock = threading.Lock()
     opt = TestOptions().parse(save=False)
     opt.nThreads = 1  # test code only supports nThreads = 1
     opt.batchSize = 1  # test code only supports batchSize = 1
