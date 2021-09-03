@@ -70,6 +70,7 @@ def taskTreePlant(Imagesize):
     return Image.fromarray(TreeImage).convert("RGBA")
 
 def Rendering(label_img_load):
+    lock.acquire()
     data=dict()
     inst_img_load = label_img_load
     data['inst'] = data['label'] = torch.tensor([[label_img_load]])
