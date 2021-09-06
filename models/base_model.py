@@ -78,14 +78,14 @@ class BaseModel(torch.nn.Module):
                         not_initialized = set()
                     else:
                         from sets import Set
-                        not_initialized = Set()                    
 
                     for k, v in model_dict.items():
                         if k not in pretrained_dict or v.size() != pretrained_dict[k].size():
                             not_initialized.add(k.split('.')[0])
                     
                     print(sorted(not_initialized))
-                    network.load_state_dict(model_dict)                  
+                    network.load_state_dict(model_dict)
+         
 
     def update_learning_rate():
         pass

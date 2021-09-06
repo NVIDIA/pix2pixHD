@@ -38,3 +38,5 @@ test/.coverage
 test/data/legacy_serialized.pt
 *.DS_Store
 *~
+datasets/
+apex/
