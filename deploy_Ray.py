@@ -20,6 +20,7 @@ import ShadowMaker2
 import TreePlant
 import ray
 import cv2
+import json
 
 ray.init()
 
@@ -53,20 +54,16 @@ def taskBuildingShadow(label_img_load):
     return shadow
 
 @ray.remote
-def taskTreePlant(Imagesize):
-    Blank = np.zeros((Imagesize[1],Imagesize[0],4),np.uint8)
-    tree = cv2.imread("TreePlantS.png",-1)
-    posList = [[0,0],
-        [130,130],
-        [130,100],
-        [100,700],
-        [100,900],
-        [300,900],
-        [500,900],
-        [100,1000]]
-    TreeImage = TreePlant.plantTreeCV(tree,posList,Blank,120)
+def taskTreePlant(Imagesize,treeData):
+    TreeImage = np.zeros((Imagesize[1],Imagesize[0],4),np.uint8)
+    for Tree in treeData:
+        tree = cv2.imread("./TreeImage/"+Tree["species"],-1)
+        posList = []
+        for points in Tree["points"]:
+            posList.append((points['x'],points['y']))
+        TreeImage = TreePlant.plantTreeCV(tree,posList,TreeImage,120)
+    
     TreeImage = cv2.cvtColor(TreeImage, cv2.COLOR_BGRA2RGBA)
-
     return Image.fromarray(TreeImage).convert("RGBA")
 
 def Rendering(label_img_load):
@@ -108,6 +105,11 @@ def post_mask():
     if request.method == 'POST':
         
         label_img = request.files['label']
+        treeData = request.form['treeData']
+        treeData = json.loads(treeData)
+
+
+
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
