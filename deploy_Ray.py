@@ -107,9 +107,7 @@ def post_mask():
         label_img = request.files['label']
         treeData = request.form['treeData']
         treeData = json.loads(treeData)
-
-
-
+        
         label_pil = Image.open(label_img.stream).convert('L')
         label_img_load = np.asarray(label_pil)
 
