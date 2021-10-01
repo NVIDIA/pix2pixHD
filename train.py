@@ -14,6 +14,8 @@ from models.models import create_model
 import util.util as util
 from util.visualizer import Visualizer
 
+# for test PAM-48 I'll delete this line
+
 opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
 if opt.continue_train:
