@@ -1,7 +1,7 @@
 import time
 import os
+import math
 import numpy as np
-import fractions
 from collections import OrderedDict
 from subprocess import call
 import torch
@@ -13,7 +13,7 @@ from .models.models import create_model
 from .util import util
 from .util.visualizer import Visualizer
 
-def lcm(a,b): return abs(a * b)/fractions.gcd(a,b) if a and b else 0
+def lcm(a,b): return abs(a * b)/math.gcd(a,b) if a and b else 0
 
 opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
