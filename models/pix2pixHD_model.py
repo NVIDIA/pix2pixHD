@@ -111,7 +111,9 @@ class Pix2PixHDModel(BaseModel):
         if self.opt.label_nc == 0:
             input_label = label_map
         else:
-            # create one-hot vector for label map 
+            if len(self.gpu_ids):
+                label_map = label_map.cuda()
+            # create one-hot vector for label map
             size = label_map.size()
             oneHot_size = (size[0], self.opt.label_nc, size[2], size[3])
             input_label = self.Tensor(torch.Size(oneHot_size)).zero_()
