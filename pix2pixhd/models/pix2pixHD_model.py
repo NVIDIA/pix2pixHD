@@ -49,7 +49,7 @@ class Pix2PixHDModel(BaseModel):
             self.netE = networks.define_G(opt.output_nc, opt.feat_num, opt.nef, 'encoder',
                                           opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)
         if self.opt.verbose:
-                print('---------- Networks initialized -------------')
+            print('---------- Networks initialized -------------')
 
         # load networks
         if not self.isTrain or opt.continue_train or opt.load_pretrain:
