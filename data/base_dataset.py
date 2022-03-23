@@ -34,7 +34,9 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
     transform_list = []
     if 'resize' in opt.resize_or_crop:
         osize = [opt.loadSize, opt.loadSize]
-        transform_list.append(transforms.Scale(osize, method))   
+        # torchvision says we should use transforms.InterpolationMode, but does not export this properly
+        # so we have to rely on the automatic conversion from PIL.Image enum, with warning
+        transform_list.append(transforms.Resize(osize, interpolation=method))
     elif 'scale_width' in opt.resize_or_crop:
         transform_list.append(transforms.Lambda(lambda img: __scale_width(img, opt.loadSize, method)))
         

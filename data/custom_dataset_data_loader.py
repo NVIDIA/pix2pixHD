@@ -7,7 +7,7 @@ def CreateDataset(opt):
     from data.aligned_dataset import AlignedDataset
     dataset = AlignedDataset()
 
-    print("dataset [%s] was created" % (dataset.name()))
+    #print("dataset [%s] was created" % (dataset.name()))
     dataset.initialize(opt)
     return dataset
 
