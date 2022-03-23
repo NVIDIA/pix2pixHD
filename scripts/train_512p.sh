@@ -1,2 +1,3 @@
+#!/bin/sh
 ### Using labels only
-python train.py --name label2city_512p
+pix2pixhd-train --name label2city_512p

@@ -1,3 +1,4 @@
+#!/bin/sh
 ################################ Testing ################################
 # labels only
-python test.py --name label2city_512p
+pix2pixhd-test --name label2city_512p

@@ -1,7 +1,7 @@
+import os
 import numpy as np
 import torch
-import os
-from util.image_pool import ImagePool
+from ..util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
 

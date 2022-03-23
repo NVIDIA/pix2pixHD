@@ -1,18 +1,19 @@
 import time
 import os
 import numpy as np
-import torch
-from torch.autograd import Variable
+import fractions
 from collections import OrderedDict
 from subprocess import call
-import fractions
-def lcm(a,b): return abs(a * b)/fractions.gcd(a,b) if a and b else 0
+import torch
+from torch.autograd import Variable
 
-from options.train_options import TrainOptions
-from data.data_loader import CreateDataLoader
-from models.models import create_model
-import util.util as util
-from util.visualizer import Visualizer
+from .options.train_options import TrainOptions
+from .data.data_loader import CreateDataLoader
+from .models.models import create_model
+from .util import util
+from .util.visualizer import Visualizer
+
+def lcm(a,b): return abs(a * b)/fractions.gcd(a,b) if a and b else 0
 
 opt = TrainOptions().parse()
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
@@ -139,3 +140,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
     ### linearly decay learning rate after certain iterations
     if epoch > opt.niter:
         model.module.update_learning_rate()
+
+def main():
+    pass
+
+if __name__ == "__main__":
+    main()

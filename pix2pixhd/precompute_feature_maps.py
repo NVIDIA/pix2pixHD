@@ -1,10 +1,10 @@
-from options.train_options import TrainOptions
-from data.data_loader import CreateDataLoader
-from models.models import create_model
 import os
-import util.util as util
 from torch.autograd import Variable
 import torch.nn as nn
+from .options.train_options import TrainOptions
+from .data.data_loader import CreateDataLoader
+from .models.models import create_model
+from .util import util
 
 opt = TrainOptions().parse()
 opt.nThreads = 1
@@ -31,3 +31,9 @@ for i, data in enumerate(dataset):
 	image_numpy = util.tensor2im(feat_map.data[0])
 	save_path = data['path'][0].replace('/train_label/', '/train_feat/')
 	util.save_image(image_numpy, save_path)
+
+def main():
+    pass
+
+if __name__ == "__main__":
+    main()

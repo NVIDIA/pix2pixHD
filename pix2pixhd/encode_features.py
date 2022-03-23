@@ -1,8 +1,8 @@
-from options.train_options import TrainOptions
-from data.data_loader import CreateDataLoader
-from models.models import create_model
-import numpy as np
 import os
+import numpy as np
+from .options.train_options import TrainOptions
+from .data.data_loader import CreateDataLoader
+from .models.models import create_model
 
 opt = TrainOptions().parse()
 opt.nThreads = 1
@@ -52,3 +52,9 @@ for label in range(opt.label_nc):
 save_name = os.path.join(save_path, name + '_clustered_%03d.npy' % opt.n_clusters)
 np.save(save_name, centers)
 print('saving to %s' % save_name)
+
+def main():
+    pass
+
+if __name__ == "__main__":
+    main()

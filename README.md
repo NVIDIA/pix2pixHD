@@ -52,20 +52,16 @@ Pytorch implementation of our method for high-resolution (e.g. 2048x1024) photor
 ## Prerequisites
 - Linux or macOS
 - Python 2 or 3
-- NVIDIA GPU (11G memory or larger) + CUDA cuDNN
+- [optionally:] NVIDIA GPU (11G memory or larger) + CUDA cuDNN
 
 ## Getting Started
 ### Installation
-- Install PyTorch and dependencies from http://pytorch.org
-- Install python libraries [dominate](https://github.com/Knio/dominate).
-```bash
-pip install dominate
-```
+- Create a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/), and activate it
 - Clone this repo:
-```bash
-git clone https://github.com/NVIDIA/pix2pixHD
-cd pix2pixHD
-```
+
+    git clone https://github.com/NVIDIA/pix2pixHD
+    pip install pix2pixHD
+
 
 
 ### Testing
@@ -74,11 +70,15 @@ cd pix2pixHD
 - Test the model (`bash ./scripts/test_1024p.sh`):
 ```bash
 #!./scripts/test_1024p.sh
-python test.py --name label2city_1024p --netG local --ngf 32 --resize_or_crop none
+pix2pixhd-test --name label2city_1024p --netG local --ngf 32 --resize_or_crop none
 ```
 The test results will be saved to a html file here: `./results/label2city_1024p/test_latest/index.html`.
 
 More example scripts can be found in the `scripts` directory.
+
+For other options, cf.
+
+    pix2pixhd-test --help
 
 
 ### Dataset
@@ -90,16 +90,20 @@ After downloading, please put it under the `datasets` folder in the same way the
 - Train a model at 1024 x 512 resolution (`bash ./scripts/train_512p.sh`):
 ```bash
 #!./scripts/train_512p.sh
-python train.py --name label2city_512p
+pix2pixhd-train --name label2city_512p
 ```
 - To view training results, please checkout intermediate results in `./checkpoints/label2city_512p/web/index.html`.
 If you have tensorflow installed, you can see tensorboard logs in `./checkpoints/label2city_512p/logs` by adding `--tf_log` to the training scripts.
+
+For other options, cf.
+
+    pix2pixhd-train --help
 
 ### Multi-GPU training
 - Train a model using multiple GPUs (`bash ./scripts/train_512p_multigpu.sh`):
 ```bash
 #!./scripts/train_512p_multigpu.sh
-python train.py --name label2city_512p --batchSize 8 --gpu_ids 0,1,2,3,4,5,6,7
+pix2pixhd-train --name label2city_512p --batchSize 8 --gpu_ids 0,1,2,3,4,5,6,7
 ```
 Note: this is not tested and we trained our model using single GPU only. Please use at your own discretion.
 
@@ -108,7 +112,7 @@ Note: this is not tested and we trained our model using single GPU only. Please 
 - You can then train the model by adding `--fp16`. For example,
 ```bash
 #!./scripts/train_512p_fp16.sh
-python -m torch.distributed.launch train.py --name label2city_512p --fp16
+python -m torch.distributed.launch pix2pixhd/train.py --name label2city_512p --fp16
 ```
 In our test case, it trains about 80% faster with AMP on a Volta machine.
 
@@ -131,7 +135,7 @@ In our test case, it trains about 80% faster with AMP on a Volta machine.
 
 If you find this useful for your research, please use the following.
 
-```
+```bibtex
 @inproceedings{wang2018pix2pixHD,
   title={High-Resolution Image Synthesis and Semantic Manipulation with Conditional GANs},
   author={Ting-Chun Wang and Ming-Yu Liu and Jun-Yan Zhu and Andrew Tao and Jan Kautz and Bryan Catanzaro},  

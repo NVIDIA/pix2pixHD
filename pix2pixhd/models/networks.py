@@ -1,8 +1,9 @@
+import functools
+import numpy as np
 import torch
 import torch.nn as nn
-import functools
 from torch.autograd import Variable
-import numpy as np
+from torchvision import models
 
 ###############################################################################
 # Functions
@@ -35,7 +36,7 @@ def define_G(input_nc, output_nc, ngf, netG, n_downsample_global=3, n_blocks_glo
     elif netG == 'encoder':
         netG = Encoder(input_nc, output_nc, ngf, n_downsample_global, norm_layer)
     else:
-        raise(Exception('generator not implemented!'))
+        raise(NotImplementedError('generator [%s] not implemented!' % netG))
     #print(netG)
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())   
@@ -382,7 +383,6 @@ class NLayerDiscriminator(nn.Module):
         else:
             return self.model(input)        
 
-from torchvision import models
 class Vgg19(torch.nn.Module):
     def __init__(self, requires_grad=False):
         super(Vgg19, self).__init__()

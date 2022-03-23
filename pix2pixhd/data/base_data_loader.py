@@ -7,7 +7,7 @@ class BaseDataLoader():
         self.opt = opt
         pass
 
-    def load_data():
+    def load_data(self):
         return None
 
         

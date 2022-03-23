@@ -1,10 +1,9 @@
+from collections import OrderedDict
+from PIL import Image
+import numpy as np
 import torch
 from torch.autograd import Variable
-from collections import OrderedDict
-import numpy as np
-import os
-from PIL import Image
-import util.util as util
+from ..util import util
 from .base_model import BaseModel
 from . import networks
 
