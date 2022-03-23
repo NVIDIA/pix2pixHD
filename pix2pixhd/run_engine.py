@@ -19,7 +19,7 @@ pip(3) install tensorrt[examples]
 try:
     import tensorrt as trt
     from tensorrt.parsers import caffeparser
-    from tensorrt.parsers import onnxparser    
+    from tensorrt.parsers import onnxparser
 except ImportError as err:
     sys.stderr.write("""ERROR: failed to import module ({})
 Please make sure you have the TensorRT Library installed
@@ -65,7 +65,7 @@ def get_input_output_names(trt_engine):
         dims = trt_engine.get_binding_dimensions(b).to_DimsCHW()
         name = trt_engine.get_binding_name(b)
         type = trt_engine.get_binding_data_type(b)
-        
+
         if (trt_engine.binding_is_input(b)):
             maps.append(name)
             print("Found input: ", name)
@@ -113,8 +113,8 @@ def time_inference(engine, batch_size, inp):
     for i in range(iter):
         context.execute(batch_size, bindings)
     g_prof.print_layer_times()
-    
-    context.destroy() 
+
+    context.destroy()
     return
 
 
@@ -154,16 +154,16 @@ def run_onnx(onnx_file, data_type, bs, inp):
     trt_builder = trt.infer.create_infer_builder(G_LOGGER)
     trt_builder.set_max_batch_size(max_batch_size)
     trt_builder.set_max_workspace_size(max_workspace_size)
-    
+
     if (apex.get_model_dtype() == trt.infer.DataType_kHALF):
         print("-------------------  Running FP16 -----------------------------")
         trt_builder.set_half2_mode(True)
-    elif (apex.get_model_dtype() == trt.infer.DataType_kINT8): 
+    elif (apex.get_model_dtype() == trt.infer.DataType_kINT8):
         print("-------------------  Running INT8 -----------------------------")
         trt_builder.set_int8_mode(True)
     else:
         print("-------------------  Running FP32 -----------------------------")
-        
+
     print("----- Builder is Done -----")
     print("----- Creating Engine -----")
     trt_engine = trt_builder.build_cuda_engine(trt_network)

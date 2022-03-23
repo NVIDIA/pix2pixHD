@@ -8,8 +8,8 @@ from .util import util
 
 opt = TrainOptions().parse()
 opt.nThreads = 1
-opt.batchSize = 1 
-opt.serial_batches = True 
+opt.batchSize = 1
+opt.serial_batches = True
 opt.no_flip = True
 opt.instance_feat = True
 
@@ -25,7 +25,7 @@ util.mkdirs(os.path.join(opt.dataroot, opt.phase + '_feat'))
 
 ######## Save precomputed feature maps for 1024p training #######
 for i, data in enumerate(dataset):
-	print('%d / %d images' % (i+1, dataset_size)) 
+	print('%d / %d images' % (i+1, dataset_size))
 	feat_map = model.module.netE.forward(Variable(data['image'].cuda(), volatile=True), data['inst'].cuda())
 	feat_map = nn.Upsample(scale_factor=2, mode='nearest')(feat_map)
 	image_numpy = util.tensor2im(feat_map.data[0])
