@@ -1,10 +1,8 @@
-import numpy as np
 import os
-import ntpath
 import time
 from . import util
 from . import html
-import scipy.misc
+from PIL import Image
 try:
     from StringIO import StringIO  # Python 2.7
 except ImportError:
@@ -43,7 +41,7 @@ class Visualizer():
                     s = StringIO()
                 except:
                     s = BytesIO()
-                scipy.misc.toimage(image_numpy).save(s, format="jpeg")
+                Image.fromarray(image_numpy).save(s, format="jpeg")
                 # Create an Image object
                 img_sum = self.tf.Summary.Image(encoded_image_string=s.getvalue(), height=image_numpy.shape[0], width=image_numpy.shape[1])
                 # Create a Summary value
@@ -112,7 +110,7 @@ class Visualizer():
     # save image to the disk
     def save_images(self, webpage, visuals, image_path):
         image_dir = webpage.get_image_dir()
-        short_path = ntpath.basename(image_path[0])
+        short_path = os.path.basename(image_path[0])
         name = os.path.splitext(short_path)[0]
 
         webpage.add_header(name)

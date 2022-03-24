@@ -1,5 +1,6 @@
+#!/bin/sh
 ################################ Testing ################################
 # first precompute and cluster all features
-python encode_features.py --name label2city_512p_feat;
+pix2pixhd-encode-features --name label2city_512p_feat;
 # use instance-wise features
-python test.py --name label2city_512p_feat --instance_feat
+pix2pixhd-test --name label2city_512p_feat --instance_feat

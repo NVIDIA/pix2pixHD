@@ -1,0 +1,49 @@
+[MASTER]
+extension-pkg-whitelist = numpy
+
+[TYPECHECK]
+generated-members = np.*, torch.*
+ignored-classes = np.*
+
+[MESSAGES CONTROL]
+# as we have legacy code in ocrolib which
+# does not adhere to most if this, and
+# pylint does not offer per-subdirectory
+# configuration yet (#618), we must be
+# overly tolerant here:
+disable =
+    ungrouped-imports,
+    multiple-imports,
+    bad-continuation,
+    missing-docstring,
+    no-self-use,
+    superfluous-parens,
+    invalid-name,
+    line-too-long,
+    too-many-arguments,
+    too-many-branches,
+    too-many-statements,
+    too-many-locals,
+    too-few-public-methods,
+    too-many-instance-attributes,
+    wrong-import-order,
+    duplicate-code,
+    #bad-whitespace,
+    consider-using-f-string,
+    unused-variable,
+    import-outside-toplevel,
+    wildcard-import,
+    unused-wildcard-import,
+    too-many-return-statements,
+    unidiomatic-typecheck,
+    multiple-statements,
+    no-else-return,
+    unnecessary-semicolon,
+    consider-using-dict-comprehension,
+    redefined-builtin
+
+# allow indented whitespace (as required by interpreter):
+no-space-check=empty-line
+
+# allow non-snake-case identifiers:
+good-names=n,i
