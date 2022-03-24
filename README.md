@@ -59,8 +59,8 @@ Pytorch implementation of our method for high-resolution (e.g. 2048x1024) photor
 - Create a [virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/), and activate it
 - Clone this repo:
 
-    git clone https://github.com/NVIDIA/pix2pixHD
-    pip install pix2pixHD
+        git clone https://github.com/NVIDIA/pix2pixHD
+        pip install pix2pixHD
 
 
 

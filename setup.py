@@ -18,7 +18,7 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     author='Ting-Chun Wang, Ming-Yu Liu, Jun-Yan Zhu, Andrew Tao, Jan Kautz, Bryan Catanzaro',
-    author_email='tingchunw@nvidia.com, https://mingyuliu.net, jan@jankautz.com, junyanz@cs.cmu.edu, bcatanzaro@acm.org',
+    author_email='tingchunw@nvidia.com, mingyul@nvidia.com, jan@jankautz.com, junyanz@cs.cmu.edu, bcatanzaro@acm.org',
     url='https://github.com/NVIDIA/pix2pixHD',
     license='BSD',
     packages=find_packages(),
