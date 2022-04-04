@@ -1,19 +1,35 @@
+from functools import total_ordering
 import numpy as np
 import torch
 import os
+import time
+import sys
 from torch.autograd import Variable
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
+sys.path.append("..")
+from faceparsing.logger import setup_logger
+from faceparsing.model import BiSeNet
+
+import torch
+import os
+import os.path as osp
+import numpy as np
+from PIL import Image
+import torchvision.transforms as transforms
+import cv2
+
 
 class Pix2PixHDModel(BaseModel):
     def name(self):
         return 'Pix2PixHDModel'
     
     def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
-        flags = (True, use_gan_feat_loss, use_vgg_loss, True, True)
-        def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake):
-            return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake),flags) if f]
+        use_importance=0
+        flags = (True, use_gan_feat_loss, use_vgg_loss, True, True,use_importance)
+        def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake,importance_loss):
+            return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake,importance_loss),flags) if f]
         return loss_filter
     
     def initialize(self, opt):
@@ -78,7 +94,7 @@ class Pix2PixHDModel(BaseModel):
                 
         
             # Names so we can breakout loss
-            self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake')
+            self.loss_names = self.loss_filter('G_GAN','G_GAN_Feat','G_VGG','D_real', 'D_fake','importance_loss')
 
             # initialize optimizers
             # optimizer G
@@ -108,7 +124,7 @@ class Pix2PixHDModel(BaseModel):
             params = list(self.netD.parameters())    
             self.optimizer_D = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))
 
-    def encode_input(self, label_map, inst_map=None, real_image=None, feat_map=None, infer=False):             
+    def encode_input(self, label_map, inst_map=None, real_image=None, feat_map=None, infer=False):          
         if self.opt.label_nc == 0:
             input_label = label_map.data.cuda()
         else:
@@ -148,20 +164,80 @@ class Pix2PixHDModel(BaseModel):
             return self.netD.forward(fake_query)
         else:
             return self.netD.forward(input_concat)
+    def get_importance(self,semantic):
+        semantic_list = np.unique(semantic.cpu().numpy().astype(int))
+        importance = np.zeros([1,1,512,512])
+        min_pix_num=512*512
+        for i in semantic_list:
+            semantic_np=semantic.cpu().numpy()
+            list_of_semantic_i=np.where(semantic_np[0][0]==i)
+            pix_num=len(list_of_semantic_i[0])
+            #print("pix_num",pix_num,"   list_of_semantic_length",len(list_of_semantic_i[0]))
+            for pos in range(len(list_of_semantic_i[0])):
+                importance[0][0][list_of_semantic_i[0][pos]][list_of_semantic_i[1][pos]]=pix_num
+            min_pix_num=min(pix_num,min_pix_num)
+        importance=torch.from_numpy(importance/min_pix_num)
+        #print(importance)
+        return importance
+    def vis_parsing_maps(im, parsing_anno, stride):
+    # Colors for all 20 parts
+    
+        im = np.array(im)
+        vis_im = im.copy().astype(np.uint8)
+        vis_parsing_anno = parsing_anno.copy().astype(np.uint8)
+        vis_parsing_anno = cv2.resize(vis_parsing_anno, None, fx=stride, fy=stride, interpolation=cv2.INTER_NEAREST)
+        return vis_parsing_anno
+
+    
+
+
+    def get_semantic(self,fake_image, cp='79999_iter.pth'):
+        n_classes = 19
+        net = BiSeNet(n_classes=n_classes)
+        net.cuda()
+        save_pth = osp.join('faceparsing/res/cp', cp)
+        net.load_state_dict(torch.load(save_pth))
+        net.eval()
+
+        to_tensor = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        with torch.no_grad():
+            fake_image=(fake_image+1)/2*255.0
+            fake_image=torch.clamp(fake_image,0,255)
+            toPIL = transforms.ToPILImage()#这里维度顺序不确定
+            image=toPIL(fake_image.squeeze())
+            image = image.resize((512, 512), Image.BILINEAR)
+            img = to_tensor(image)
+            img=torch.unsqueeze(img,0)
+            img = img.cuda()
+            #print("image shape",img.shape) (1,3,512,512)
+            print("nonzero in fake img ",torch.unique(fake_image))
+            #print(img.shape)
+            out = net(img)[0]
+            #print("out_is",out)
+            parsing = out.squeeze(0).cpu().numpy().argmax(0)
+            print(np.unique(parsing))
+            vis_parsing_anno = parsing.copy().astype(np.uint8)
+            vis_parsing_anno = cv2.resize(vis_parsing_anno, None, fx=1, fy=1, interpolation=cv2.INTER_NEAREST)
+            trans=transforms.ToTensor()
+            semantic=trans(vis_parsing_anno).unsqueeze(0)
+            
+            return semantic#不是灰度图？
 
     def forward(self, label, inst, image, feat, infer=False):
         # Encode Inputs
         input_label, inst_map, real_image, feat_map = self.encode_input(label, inst, image, feat)  
-
         # Fake Generation
         if self.use_features:
             if not self.opt.load_features:
+                #print("real_inst_size",inst_map.shape)
                 feat_map = self.netE.forward(real_image, inst_map)                     
             input_concat = torch.cat((input_label, feat_map), dim=1)                        
         else:
             input_concat = input_label
         fake_image = self.netG.forward(input_concat)
-
         # Fake Detection and Loss
         pred_fake_pool = self.discriminate(input_label, fake_image, use_pool=True)
         loss_D_fake = self.criterionGAN(pred_fake_pool, False)        
@@ -188,9 +264,38 @@ class Pix2PixHDModel(BaseModel):
         loss_G_VGG = 0
         if not self.opt.no_vgg_loss:
             loss_G_VGG = self.criterionVGG(fake_image, real_image) * self.opt.lambda_feat
+
+        use_importance=0
+        importance_loss=0
+        fake_semantic=self.get_semantic(fake_image)
+        print(torch.unique(fake_semantic))
+        if(use_importance):
+            
+            # Importance loss added by maoliyuan
+            fake_semantic=self.get_semantic(fake_image)
+        #print("fake_semantic_size_is",fake_semantic.shape)
+            fake_feat=self.netE.forward(fake_image, fake_semantic)
+            importance_true=self.get_importance(inst_map).cuda()
+            importance_fake=self.get_importance(fake_semantic).cuda()
+            importance=importance_true*importance_fake
+            importance=1.0/importance
+            importance=importance.cuda()
+            importance_loss_fn = torch.nn.MSELoss(reduction='sum')
+            print(torch.sum(torch.isnan(feat_map).int()).item())
+        #print("feat_map",feat_map.shape)
+            for i in range(3):
+                importance_loss=importance_loss+\
+                            importance_loss_fn(importance*importance_true*feat_map[0][i],
+                                               importance*importance_fake*fake_feat[0][i])
+
+            print("importance_loss_is",importance_loss.item())
+            
+            
         
+
+
         # Only return the fake_B image if necessary to save BW
-        return [ self.loss_filter( loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ), None if not infer else fake_image ]
+        return [ self.loss_filter( loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ,importance_loss), None if not infer else fake_image ]
 
     def inference(self, label, inst, image=None):
         # Encode Inputs        

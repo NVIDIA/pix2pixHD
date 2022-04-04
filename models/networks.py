@@ -3,7 +3,7 @@ import torch.nn as nn
 import functools
 from torch.autograd import Variable
 import numpy as np
-
+import torchvision.transforms as transforms
 ###############################################################################
 # Functions
 ###############################################################################
@@ -276,13 +276,14 @@ class Encoder(nn.Module):
 
     def forward(self, input, inst):
         outputs = self.model(input)
-
-        # instance-wise average pooling
+        #print("fake_image_size_is",outputs.shape)
+        #instance-wise average pooling
         outputs_mean = outputs.clone()
         inst_list = np.unique(inst.cpu().numpy().astype(int))        
         for i in inst_list:
             for b in range(input.size()[0]):
-                indices = (inst[b:b+1] == int(i)).nonzero() # n x 4            
+                indices = (inst[b:b+1] == int(i)).nonzero() # n x 4     
+                #print(b,"!",indices.shape)       
                 for j in range(self.output_nc):
                     output_ins = outputs[indices[:,0] + b, indices[:,1] + j, indices[:,2], indices[:,3]]                    
                     mean_feat = torch.mean(output_ins).expand_as(output_ins)                                        

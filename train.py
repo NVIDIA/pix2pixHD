@@ -1,3 +1,5 @@
+from curses import use_default_colors
+from shutil import unregister_archive_format
 import time
 import os
 import numpy as np
@@ -76,8 +78,12 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         # calculate final loss scalar
         loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
-        loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat',0) + loss_dict.get('G_VGG',0)
-
+        #importance
+        use_importance=0
+        if(use_importance):
+            loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat',0) + loss_dict.get('G_VGG',0) +loss_dict['importance_loss']
+        else:
+            loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat',0) + loss_dict.get('G_VGG',0) 
         ############### Backward Pass ####################
         # update generator weights
         optimizer_G.zero_grad()
