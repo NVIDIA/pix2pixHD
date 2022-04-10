@@ -252,6 +252,28 @@ class ResnetBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
+class IdentityNetwork(nn.Module):
+    def __init__(self, input_nc=3, output_nc=3, norm_layer=nn.BatchNorm2d):    
+        super(IdentityNetwork, self).__init__() 
+        self.output_nc = output_nc        
+
+        model = [nn.Conv2d(input_nc, 32, kernel_size=8,stride=4, padding=0), 
+                 norm_layer(32), nn.ReLU(True)]             
+        ### downsample two times
+        for i in range(2):
+            mult = 2**i
+            model += [nn.Conv2d(32 * mult, 32 * mult * 2, kernel_size=4, stride=2, padding=1),
+                      norm_layer(32 * mult * 2), nn.ReLU(True)]
+
+        ### upsample         
+        model += [nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=0, output_padding=0),
+                       norm_layer(64), nn.ReLU(True)]        
+        model += [nn.ConvTranspose2d(64, output_nc, kernel_size=5,stride=4, padding=1,output_padding=1), nn.Tanh()]
+        self.model = nn.Sequential(*model) 
+    def forward(self, input):
+        merged_feature = self.model(input)
+        return merged_feature
+
 class Encoder(nn.Module):
     def __init__(self, input_nc, output_nc, ngf=32, n_downsampling=4, norm_layer=nn.BatchNorm2d):
         super(Encoder, self).__init__()        

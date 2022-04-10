@@ -27,7 +27,7 @@ def get_params(opt, size):
     x = random.randint(0, np.maximum(0, new_w - opt.fineSize))
     y = random.randint(0, np.maximum(0, new_h - opt.fineSize))
     
-    flip = random.random() > 0.5
+    flip = random.random() > 0.5  # 反转图像
     return {'crop_pos': (x, y), 'flip': flip}
 
 def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
@@ -55,7 +55,7 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
     if normalize:
         transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
                                                 (0.5, 0.5, 0.5))]
-    return transforms.Compose(transform_list)
+    return transforms.Compose(transform_list)  #嵌套函数列表
 
 def normalize():    
     return transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))

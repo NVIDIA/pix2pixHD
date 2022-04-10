@@ -71,5 +71,5 @@ if __name__ == '__main__':
     loss1 = criteria1(logits1, lbs)
     loss2 = criteria2(logits2, lbs)
     loss = loss1 + loss2
-    print(loss.detach().cpu())
+    # print(loss.detach().cpu())
     loss.backward()

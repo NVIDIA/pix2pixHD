@@ -26,7 +26,7 @@ class Pix2PixHDModel(BaseModel):
         return 'Pix2PixHDModel'
     
     def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
-        use_importance=0
+        use_importance=1
         flags = (True, use_gan_feat_loss, use_vgg_loss, True, True,use_importance)
         def loss_filter(g_gan, g_gan_feat, g_vgg, d_real, d_fake,importance_loss):
             return [l for (l,f) in zip((g_gan,g_gan_feat,g_vgg,d_real,d_fake,importance_loss),flags) if f]
@@ -60,7 +60,8 @@ class Pix2PixHDModel(BaseModel):
                 netD_input_nc += 1
             self.netD = networks.define_D(netD_input_nc, opt.ndf, opt.n_layers_D, opt.norm, use_sigmoid, 
                                           opt.num_D, not opt.no_ganFeat_loss, gpu_ids=self.gpu_ids)
-
+        # Feature merge network
+        self.imn=networks.Identitynetwork()
         ### Encoder network
         if self.gen_features:          
             self.netE = networks.define_G(opt.output_nc, opt.feat_num, opt.nef, 'encoder', 
@@ -226,15 +227,21 @@ class Pix2PixHDModel(BaseModel):
             
             return semantic#不是灰度图？
 
-    def forward(self, label, inst, image, feat, infer=False):
+    def forward(self, label, inst, image, feat,source_label,source_inst,source_image,source_feat, infer=False):
         # Encode Inputs
         input_label, inst_map, real_image, feat_map = self.encode_input(label, inst, image, feat)  
+        source_input_label, source_inst_map, source_real_image, source_feat_map = self.encode_input(source_label, source_inst,
+        source_image, source_feat)
         # Fake Generation
         if self.use_features:
             if not self.opt.load_features:
                 #print("real_inst_size",inst_map.shape)
-                feat_map = self.netE.forward(real_image, inst_map)                     
-            input_concat = torch.cat((input_label, feat_map), dim=1)                        
+                #print("real_image_size",real_image.shape)
+                feat_map = self.netE.forward(real_image, inst_map) 
+                source_feat_map = self.netE.forward(source_real_image, source_inst_map)  
+                input_for_merge=torch.cat(torch.cat((feat_map,source_feat_map),dim=1),torch.cat((source_feat_map,feat_map),dim=1),dim=0)
+                merged_feat_map= self.imn(input_for_merge)
+            input_concat = torch.cat((input_label, merged_feat_map), dim=1)                        
         else:
             input_concat = input_label
         fake_image = self.netG.forward(input_concat)
@@ -256,7 +263,7 @@ class Pix2PixHDModel(BaseModel):
             feat_weights = 4.0 / (self.opt.n_layers_D + 1)
             D_weights = 1.0 / self.opt.num_D
             for i in range(self.opt.num_D):
-                for j in range(len(pred_fake[i])-1):
+                for j in range(len(pred_fake[i])-2,len(pred_fake[i])-1):#此处只减少第一层的loss
                     loss_G_GAN_Feat += D_weights * feat_weights * \
                         self.criterionFeat(pred_fake[i][j], pred_real[i][j].detach()) * self.opt.lambda_feat
                    
@@ -265,28 +272,36 @@ class Pix2PixHDModel(BaseModel):
         if not self.opt.no_vgg_loss:
             loss_G_VGG = self.criterionVGG(fake_image, real_image) * self.opt.lambda_feat
 
-        use_importance=0
+        use_importance=1
         importance_loss=0
-        fake_semantic=self.get_semantic(fake_image)
-        print(torch.unique(fake_semantic))
+        #fake_semantic=self.get_semantic(fake_image)
+        #print(torch.unique(fake_semantic))
         if(use_importance):
             
             # Importance loss added by maoliyuan
-            fake_semantic=self.get_semantic(fake_image)
+            #fake_semantic=self.get_semantic(fake_image)
         #print("fake_semantic_size_is",fake_semantic.shape)
-            fake_feat=self.netE.forward(fake_image, fake_semantic)
+            fake_feat=self.netE.forward(fake_image,inst_map)
             importance_true=self.get_importance(inst_map).cuda()
-            importance_fake=self.get_importance(fake_semantic).cuda()
-            importance=importance_true*importance_fake
-            importance=1.0/importance
+            #importance_fake=self.get_importance(fake_semantic).cuda()
+            #importance=importance_true*importance_fake
+            inverse_importance=importance_true
+            importance=1.0/importance_true
             importance=importance.cuda()
+            inverse_importance=inverse_importance.cuda()
             importance_loss_fn = torch.nn.MSELoss(reduction='sum')
-            print(torch.sum(torch.isnan(feat_map).int()).item())
+            inverse_loss_fn=torch.nn.MSELoss(reduction='sum')
+            #print(torch.sum(torch.isnan(feat_map).int()).item())
         #print("feat_map",feat_map.shape)
             for i in range(3):
+                #balance the loss
+                total_importance=torch.sum(importance)
+                total_inverse_importance=torch.sum(inverse_importance)
+                balance_ratio=total_inverse_importance/(total_importance+total_inverse_importance)
                 importance_loss=importance_loss+\
-                            importance_loss_fn(importance*importance_true*feat_map[0][i],
-                                               importance*importance_fake*fake_feat[0][i])
+                            balance_ratio*importance_loss_fn(inverse_importance*feat_map[0][i],
+                                               inverse_importance*fake_feat[0][i])+\
+                                               (1-balance_ratio)*inverse_loss_fn(importance*source_feat_map[0][i],importance*fake_feat[0][i])
 
             print("importance_loss_is",importance_loss.item())
             
@@ -303,13 +318,13 @@ class Pix2PixHDModel(BaseModel):
         input_label, inst_map, real_image, _ = self.encode_input(Variable(label), Variable(inst), image, infer=True)
 
         # Fake Generation
-        if self.use_features:
+        if self.use_features:  #用label_feat等
             if self.opt.use_encoded_image:
                 # encode the real image to get feature map
-                feat_map = self.netE.forward(real_image, inst_map)
+                feat_map = self.netE.forward(real_image, inst_map)  #除此之外没用image
             else:
                 # sample clusters from precomputed features             
-                feat_map = self.sample_features(inst_map)
+                feat_map = self.sample_features(inst_map)  #直接从inst取样……
             input_concat = torch.cat((input_label, feat_map), dim=1)                        
         else:
             input_concat = input_label        
