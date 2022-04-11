@@ -324,7 +324,7 @@ class Pix2PixHDModel(BaseModel):
     def sample_features(self, inst): 
         # read precomputed feature clusters 
         cluster_path = os.path.join(self.opt.checkpoints_dir, self.opt.name, self.opt.cluster_path)        
-        features_clustered = np.load(cluster_path, encoding='latin1').item()
+        features_clustered = np.load(cluster_path, encoding='latin1', allow_pickle=True).item()
 
         # randomly sample from the feature clusters
         inst_np = inst.cpu().numpy().astype(int)                                      
@@ -359,7 +359,7 @@ class Pix2PixHDModel(BaseModel):
             idx = idx[num//2,:]
             val = np.zeros((1, feat_num+1))                        
             for k in range(feat_num):
-                val[0, k] = feat_map[idx[0], idx[1] + k, idx[2], idx[3]].data[0]            
+                val[0, k] = feat_map[idx[0], idx[1] + k, idx[2], idx[3]].item()
             val[0, feat_num] = float(num) / (h * w // block_num)
             feature[label] = np.append(feature[label], val, axis=0)
         return feature
