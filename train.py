@@ -117,7 +117,8 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         if save_fake:
             visuals = OrderedDict([('input_label', util.tensor2label(data['t_label'][0], opt.label_nc)),
                                    ('synthesized_image', util.tensor2im(generated.data[0])),
-                                   ('real_image', util.tensor2im(data['t_image'][0]))])
+                                   ('source_image', util.tensor2im(data['s_image'][0])),
+                                   ('target_image', util.tensor2im(data['t_image'][0]))])
             visualizer.display_current_results(visuals, epoch, total_steps)
 
         ### save latest model

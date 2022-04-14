@@ -73,7 +73,8 @@ class Pix2PixHDModel(BaseModel):
         # load networks
         if not self.isTrain or opt.continue_train or opt.load_pretrain:
             pretrained_path = '' if not self.isTrain else opt.load_pretrain
-            self.load_network(self.netG, 'G', opt.which_epoch, pretrained_path)            
+            self.load_network(self.netG, 'G', opt.which_epoch, pretrained_path)
+            self.load_network(self.imn, 'I', opt.which_epoch, pretrained_path)
             if self.isTrain:
                 self.load_network(self.netD, 'D', opt.which_epoch, pretrained_path)  
             if self.gen_features:
@@ -290,39 +291,45 @@ class Pix2PixHDModel(BaseModel):
             inverse_importance=inverse_importance.cuda()
             importance_loss_fn = torch.nn.MSELoss(reduction='sum')
             identityloss=nn.L1Loss()
-            identitylabel=[1,2,3,4,5,6,7,8,9,10,11,12,13]
-            pos=[0]
+            identitylabel=[1,2,3,4,5,7,8,10,11,12,13]
+            pos={}
             source_inst_squeeze=torch.squeeze(source_inst_map)
             for label in identitylabel:
                 flag=(source_inst_squeeze==label)
                 flag_list=flag.nonzero()
                 if(len(flag_list)!=0):
-                    pos.append(flag_list[0])
-                else:
-                    zero=torch.zeros(2)
-                    pos.append(zero)
+                    pos[label]=flag_list[0]
             # inverse_loss_fn=torch.nn.MSELoss(reduction='sum')
             #print(torch.sum(torch.isnan(feat_map).int()).item())
             #print("feat_map",feat_map.shape)
             # feature_diff=0
             inclass_loss=0
             betweenclass_loss=0
+            id_betweenclass_loss=0
             for i in range(3):
                 idealidentity=torch.zeros([512,512]).cuda()
+                fake_important_id_area=torch.zeros([512,512]).cuda()
+                fake_important_id_area=fake_important_id_area+torch.where((inst_map[0][0]<=13) * (inst_map[0][0]!=6) * (inst_map[0][0]!=9),1,0)
+                source_important_id_area=torch.zeros([512,512]).cuda()
+                source_important_id_area=source_important_id_area+torch.where((source_inst_map[0][0]<=13) * (source_inst_map[0][0]!=6) * (source_inst_map[0][0]!=9),1,0)
                 for label in identitylabel:
-                    if(pos[label][0]!=0 or pos[label][1]!=0):
+                    if(label in pos):
                         replace=source_feat_map[0][i][pos[label][0]][pos[label][1]]
                         idealidentity=idealidentity+torch.where(inst_map==label,float(replace),float(0))
-                idealidentity=torch.where(idealidentity==0,feat_map[0][i],idealidentity)
+                #idealidentity=torch.where(idealidentity==0,feat_map[0][i],idealidentity)
                 # feature_diff=feature_diff+1-(torch.sum(source_feat_map[0][i] * feat_map[0][i]) / (torch.norm(source_feat_map[0][i]) * torch.norm(feat_map[0][i])))
                 #balance the loss
                 # total_importance=torch.sum(importance)
                 # total_inverse_importance=torch.sum(inverse_importance)
                 # balance_ratio=total_inverse_importance/(total_importance+total_inverse_importance)
                 #print("feat_max",torch.max(source_feat_map))
-                inclass_loss=inclass_loss+1-torch.sum(idealidentity * fake_feat[0][i]) / (torch.norm(fake_feat[0][i]) * torch.norm(idealidentity))
+                inclass_loss=inclass_loss+1-torch.sum(idealidentity *fake_feat[0][i]) / (torch.norm(fake_important_id_area*fake_feat[0][i]) * torch.norm(idealidentity))
+                source_id=source_feat_map[0][i]*source_important_id_area
+                target_id=feat_map[0][i]*fake_important_id_area
+                id_betweenclass_loss=id_betweenclass_loss+\
+                    torch.sum(source_id * target_id) /(torch.norm(source_id) * torch.norm(target_id))
                 betweenclass_loss=betweenclass_loss+torch.sum(source_feat_map[0][i] * feat_map[0][i]) / (torch.norm(source_feat_map[0][i]) * torch.norm(feat_map[0][i]))
-                importance_loss=importance_loss+inclass_loss+betweenclass_loss
+                importance_loss=importance_loss+inclass_loss+betweenclass_loss+id_betweenclass_loss
                 
                             #importance_loss_fn(inverse_importance*feat_map[0][i],inverse_importance*fake_feat[0][i])
                             
@@ -364,7 +371,7 @@ class Pix2PixHDModel(BaseModel):
     def sample_features(self, inst): 
         # read precomputed feature clusters 
         cluster_path = os.path.join(self.opt.checkpoints_dir, self.opt.name, self.opt.cluster_path)        
-        features_clustered = np.load(cluster_path, encoding='latin1').item()
+        features_clustered = np.load(cluster_path, encoding='latin1', allow_pickle=True).item()
 
         # randomly sample from the feature clusters
         inst_np = inst.cpu().numpy().astype(int)                                      
@@ -399,7 +406,7 @@ class Pix2PixHDModel(BaseModel):
             idx = idx[num//2,:]
             val = np.zeros((1, feat_num+1))                        
             for k in range(feat_num):
-                val[0, k] = feat_map[idx[0], idx[1] + k, idx[2], idx[3]].data[0]            
+                val[0, k] = feat_map[idx[0], idx[1] + k, idx[2], idx[3]].item()
             val[0, feat_num] = float(num) / (h * w // block_num)
             feature[label] = np.append(feature[label], val, axis=0)
         return feature
@@ -418,6 +425,7 @@ class Pix2PixHDModel(BaseModel):
     def save(self, which_epoch):
         self.save_network(self.netG, 'G', which_epoch, self.gpu_ids)
         self.save_network(self.netD, 'D', which_epoch, self.gpu_ids)
+        self.save_network(self.imn, 'I', which_epoch, self.gpu_ids)
         if self.gen_features:
             self.save_network(self.netE, 'E', which_epoch, self.gpu_ids)
 

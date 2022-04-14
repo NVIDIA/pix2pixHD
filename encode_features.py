@@ -39,7 +39,7 @@ if reencode:
 ############## Clustering ###########
 n_clusters = opt.n_clusters
 load_name = os.path.join(save_path, name + '.npy')
-features = np.load(load_name).item()
+features = np.load(load_name, allow_pickle=True).item()
 from sklearn.cluster import KMeans
 centers = {}
 for label in range(opt.label_nc):

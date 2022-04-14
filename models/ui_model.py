@@ -66,7 +66,7 @@ class UIModel(BaseModel):
         else:
             self.net_input = Variable(self.input_label, volatile=True)  
         
-        self.features_clustered = np.load(feat_path).item()
+        self.features_clustered = np.load(feat_path, allow_pickle=True).item()
         self.object_map = self.inst_map if opt.instance_feat else self.label_map 
                        
         object_np = self.object_map.cpu().numpy().astype(int) 
