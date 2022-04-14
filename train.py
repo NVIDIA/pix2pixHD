@@ -38,7 +38,7 @@ if opt.debug:
 data_loader = CreateDataLoader(opt)
 dataset = data_loader.load_data()
 dataset_size = len(data_loader)
-print('#training images = %d' % dataset_size)
+# print('#training images = %d' % dataset_size)
 
 model = create_model(opt)
 visualizer = Visualizer(opt)
@@ -69,8 +69,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         save_fake = total_steps % opt.display_freq == display_delta
 
         ############## Forward Pass ######################
-        losses, generated = model(Variable(data['label']), Variable(data['inst']), 
-            Variable(data['image']), Variable(data['feat']), infer=save_fake)
+        losses, generated = model(Variable(data['t_label']), Variable(data['t_inst']),
+            Variable(data['t_image']), Variable(data['t_feat']), Variable(data['s_label']), Variable(data['s_inst']),
+            Variable(data['s_image']), Variable(data['s_feat']), infer=save_fake)
 
         # sum per device losses
         losses = [ torch.mean(x) if not isinstance(x, int) else x for x in losses ]
@@ -79,9 +80,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         # calculate final loss scalar
         loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
         #importance
-        use_importance=0
+        use_importance=1
         if(use_importance):
-            loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat',0) + loss_dict.get('G_VGG',0) +loss_dict['importance_loss']
+            loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat',0) + loss_dict.get('G_VGG',0) + loss_dict['importance_loss'] # loss_dict['importance_loss']
         else:
             loss_G = loss_dict['G_GAN'] + loss_dict.get('G_GAN_Feat',0) + loss_dict.get('G_VGG',0) 
         ############### Backward Pass ####################
@@ -99,7 +100,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
             with amp.scale_loss(loss_D, optimizer_D) as scaled_loss: scaled_loss.backward()                
         else:
             loss_D.backward()        
-        optimizer_D.step()        
+        optimizer_D.step()     
+
+        #update identitynetworks  
 
         ############## Display results and errors ##########
         ### print out errors
@@ -112,9 +115,9 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         ### display output images
         if save_fake:
-            visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
+            visuals = OrderedDict([('input_label', util.tensor2label(data['t_label'][0], opt.label_nc)),
                                    ('synthesized_image', util.tensor2im(generated.data[0])),
-                                   ('real_image', util.tensor2im(data['image'][0]))])
+                                   ('real_image', util.tensor2im(data['t_image'][0]))])
             visualizer.display_current_results(visuals, epoch, total_steps)
 
         ### save latest model

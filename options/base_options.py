@@ -23,9 +23,9 @@ class BaseOptions():
 
         # input/output sizes       
         self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
-        self.parser.add_argument('--loadSize', type=int, default=1024, help='scale images to this size')
+        self.parser.add_argument('--loadSize', type=int, default=512, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=512, help='then crop to this size')
-        self.parser.add_argument('--label_nc', type=int, default=35, help='# of input label channels')
+        self.parser.add_argument('--label_nc', type=int, default=19, help='# of input label channels')
         self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
         self.parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
 
@@ -59,6 +59,9 @@ class BaseOptions():
         self.parser.add_argument('--n_downsample_E', type=int, default=4, help='# of downsampling layers in encoder') 
         self.parser.add_argument('--nef', type=int, default=16, help='# of encoder filters in the first conv layer')        
         self.parser.add_argument('--n_clusters', type=int, default=10, help='number of clusters for features')        
+
+        # new config
+        self.parser.add_argument('--random_pair', type=bool, default=True, help='source and target use random pair')        
 
         self.initialized = True
 

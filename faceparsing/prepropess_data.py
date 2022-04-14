@@ -33,6 +33,6 @@ for i in range(15):
 
                 mask[sep_mask == 225] = l
         cv2.imwrite('{}/{}.png'.format(mask_path, j), mask)
-        print(j)
+        # print(j)
 
-print(counter, total)
+# print(counter, total)

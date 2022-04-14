@@ -74,7 +74,7 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
             out = net(img)[0]
             parsing = out.squeeze(0).cpu().numpy().argmax(0)
             # print(parsing)
-            print(np.unique(parsing))
+            # print(np.unique(parsing))
 
             vis_parsing_maps(image, parsing, stride=1, save_im=True, save_path=osp.join(respth, image_path))
 
