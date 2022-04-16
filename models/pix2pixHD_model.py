@@ -340,6 +340,7 @@ class Pix2PixHDModel(BaseModel):
                 idealidentity=torch.where((fake_important_id_area!=0) * (source_important_id_area==0),feat_map[0][i].double(),float(0))
                 idealidentity=idealidentity+fake_important_id_area*source_inst_moved
                 idealidentity=idealidentity.detach()
+                idealidentity = idealidentity.to(torch.float32)
                 idealidentity_with_background=torch.where(idealidentity==0,feat_map[0][i],idealidentity)
                 # source_important_id_area=torch.zeros([512,512]).cuda()
                 # source_important_id_area=source_important_id_area+torch.where((source_inst_map[0][0]<=13) * (source_inst_map[0][0]!=6) * (source_inst_map[0][0]!=9),1,0)
