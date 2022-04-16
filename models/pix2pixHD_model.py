@@ -294,6 +294,7 @@ class Pix2PixHDModel(BaseModel):
             identitylabel=[1,2,3,4,5,7,8,10,11,12,13]
             pos={}
             source_inst_squeeze=torch.squeeze(source_inst_map)
+            inst_squeeze=torch.squeeze(inst_map)
             for label in identitylabel:
                 flag=(source_inst_squeeze==label)
                 flag_list=flag.nonzero()
@@ -306,16 +307,46 @@ class Pix2PixHDModel(BaseModel):
             inclass_loss=0
             betweenclass_loss=0
             id_betweenclass_loss=0
+            imn_loss=0
+            fake_important_id_area=torch.zeros([512,512]).cuda()
+            source_important_id_area=torch.zeros([512,512]).cuda()
+            fake_important_id_area=fake_important_id_area+torch.where((inst_map[0][0]<=13) * (inst_map[0][0]!=6) * (inst_map[0][0]!=9),1,0)
+            source_important_id_area=source_important_id_area+torch.where((source_inst_map[0][0]<=13) * (source_inst_map[0][0]!=6) * (source_inst_map[0][0]!=9),1,0)
+            center_area_source=source_inst_squeeze==10
+            center_area_source_pos=torch.mean(center_area_source.nonzero().float(),dim=0)
+            center_area_target=inst_squeeze==10
+            center_area_target_pos=torch.mean(center_area_target.nonzero().float(),dim=0)
+            move_dist=center_area_target_pos-center_area_source_pos
+            #print("center_area_pos",move_dist)
             for i in range(3):
                 idealidentity=torch.zeros([512,512]).cuda()
-                fake_important_id_area=torch.zeros([512,512]).cuda()
-                fake_important_id_area=fake_important_id_area+torch.where((inst_map[0][0]<=13) * (inst_map[0][0]!=6) * (inst_map[0][0]!=9),1,0)
-                source_important_id_area=torch.zeros([512,512]).cuda()
-                source_important_id_area=source_important_id_area+torch.where((source_inst_map[0][0]<=13) * (source_inst_map[0][0]!=6) * (source_inst_map[0][0]!=9),1,0)
-                for label in identitylabel:
-                    if(label in pos):
-                        replace=source_feat_map[0][i][pos[label][0]][pos[label][1]]
-                        idealidentity=idealidentity+torch.where(inst_map==label,float(replace),float(0))
+                if(move_dist[0]<=0):
+                    source_inst_narrow=source_inst_map[0][0].narrow(0,int(-move_dist[0]),512-int(-move_dist[0]))
+                    concate=torch.zeros([int(-move_dist[0]),512]).cuda()
+                    source_inst_moved_dim0=torch.cat([source_inst_narrow,concate],dim=0)
+                    #print("cocate_size",source_inst_moved_dim0.shape)
+                else:
+                    source_inst_narrow=source_inst_map[0][0].narrow(0,0,512-int(move_dist[0]))
+                    concate=torch.zeros([int(move_dist[0]),512]).cuda()
+                    source_inst_moved_dim0=torch.cat([concate,source_inst_narrow],dim=0)
+                if(move_dist[1]<=0):
+                    source_inst_narrow_dim1=source_inst_moved_dim0.narrow(1,int(-move_dist[1]),512-int(-move_dist[1]))
+                    concate=torch.zeros([512,int(-move_dist[1])]).cuda()
+                    source_inst_moved=torch.cat([source_inst_narrow_dim1,concate],dim=1)
+                else:
+                    source_inst_narrow_dim1=source_inst_moved_dim0.narrow(1,0,512-int(move_dist[1]))
+                    concate=torch.zeros([512,int(move_dist[1])]).cuda()
+                    source_inst_moved=torch.cat([concate,source_inst_narrow_dim1],dim=1)
+                idealidentity=torch.where((fake_important_id_area!=0) * (source_important_id_area==0),feat_map[0][i].double(),float(0))
+                idealidentity=idealidentity+fake_important_id_area*source_inst_moved
+                idealidentity=idealidentity.detach()
+                idealidentity_with_background=torch.where(idealidentity==0,feat_map[0][i],idealidentity)
+                # source_important_id_area=torch.zeros([512,512]).cuda()
+                # source_important_id_area=source_important_id_area+torch.where((source_inst_map[0][0]<=13) * (source_inst_map[0][0]!=6) * (source_inst_map[0][0]!=9),1,0)
+                # for label in identitylabel:
+                #     if(label in pos):
+                #         replace=source_feat_map[0][i][pos[label][0]][pos[label][1]]
+                #         idealidentity=idealidentity+torch.where(inst_map==label,float(replace),float(0))
                 #idealidentity=torch.where(idealidentity==0,feat_map[0][i],idealidentity)
                 # feature_diff=feature_diff+1-(torch.sum(source_feat_map[0][i] * feat_map[0][i]) / (torch.norm(source_feat_map[0][i]) * torch.norm(feat_map[0][i])))
                 #balance the loss
@@ -323,13 +354,14 @@ class Pix2PixHDModel(BaseModel):
                 # total_inverse_importance=torch.sum(inverse_importance)
                 # balance_ratio=total_inverse_importance/(total_importance+total_inverse_importance)
                 #print("feat_max",torch.max(source_feat_map))
+                imn_loss=imn_loss+1-torch.sum(merged_feat_map[0][i] *idealidentity_with_background) / (torch.norm(idealidentity_with_background) * torch.norm(merged_feat_map[0][i]))
                 inclass_loss=inclass_loss+1-torch.sum(idealidentity *fake_feat[0][i]) / (torch.norm(fake_important_id_area*fake_feat[0][i]) * torch.norm(idealidentity))
                 source_id=source_feat_map[0][i]*source_important_id_area
                 target_id=feat_map[0][i]*fake_important_id_area
                 id_betweenclass_loss=id_betweenclass_loss+\
                     torch.sum(source_id * target_id) /(torch.norm(source_id) * torch.norm(target_id))
                 betweenclass_loss=betweenclass_loss+torch.sum(source_feat_map[0][i] * feat_map[0][i]) / (torch.norm(source_feat_map[0][i]) * torch.norm(feat_map[0][i]))
-                importance_loss=importance_loss+inclass_loss+betweenclass_loss+id_betweenclass_loss
+                importance_loss=importance_loss+inclass_loss+0.5*betweenclass_loss+id_betweenclass_loss+0.5*imn_loss
                 
                             #importance_loss_fn(inverse_importance*feat_map[0][i],inverse_importance*fake_feat[0][i])
                             
