@@ -61,7 +61,7 @@ class BaseOptions():
         self.parser.add_argument('--n_clusters', type=int, default=10, help='number of clusters for features')        
 
         # new config
-        self.parser.add_argument('--random_pair', type=bool, default=True, help='source and target use random pair')        
+        self.parser.add_argument('--random_pair', type=int, default=1, help='source and target use random pair')
 
         self.initialized = True
 

@@ -72,7 +72,8 @@ class Pix2PixHDModel(BaseModel):
 
         # load networks
         if not self.isTrain or opt.continue_train or opt.load_pretrain:
-            pretrained_path = '' if not self.isTrain else opt.load_pretrain
+            # pretrained_path = '' if not self.isTrain else opt.load_pretrain
+            pretrained_path = opt.load_pretrain
             self.load_network(self.netG, 'G', opt.which_epoch, pretrained_path)
             self.load_network(self.imn, 'I', opt.which_epoch, pretrained_path)
             if self.isTrain:
@@ -377,22 +378,28 @@ class Pix2PixHDModel(BaseModel):
         # Only return the fake_B image if necessary to save BW
         return [ self.loss_filter( loss_G_GAN, loss_G_GAN_Feat, loss_G_VGG, loss_D_real, loss_D_fake ,importance_loss), None if not infer else fake_image ]
 
-    def inference(self, label, inst, image=None):
-        # Encode Inputs        
-        image = Variable(image) if image is not None else None
-        input_label, inst_map, real_image, _ = self.encode_input(Variable(label), Variable(inst), image, infer=True)
+    def inference(self, label, inst, image, s_label, s_inst, s_image):
+        # Encode Inputs
+        label = Variable(label)
+        inst = Variable(inst)
+        image = Variable(image)
+        s_label = Variable(s_label)
+        s_inst = Variable(s_inst)
+        s_image = Variable(s_image)
+        input_label, inst_map, real_image, _ = self.encode_input(label, inst, image, infer=True)
+        s_input_label, s_inst_map, s_real_image, _ = self.encode_input(s_label, s_inst, s_image, infer=True)
 
         # Fake Generation
         if self.use_features:  #用label_feat等
-            if self.opt.use_encoded_image:
-                # encode the real image to get feature map
-                feat_map = self.netE.forward(real_image, inst_map)  #除此之外没用image
-            else:
-                # sample clusters from precomputed features             
-                feat_map = self.sample_features(inst_map)  #直接从inst取样……
-            input_concat = torch.cat((input_label, feat_map), dim=1)                        
+            # encode the real image to get feature map
+            s_feat_map = self.netE.forward(s_real_image, s_inst_map)
+            feat_map = self.netE.forward(real_image, inst_map)  #除此之外没用image
+            input_for_merge=torch.cat((torch.cat((feat_map,s_feat_map),dim=3),torch.cat((s_feat_map,feat_map),dim=3)),dim=2)
+            self.imn.cuda()
+            merged_feat_map= self.imn(input_for_merge)
+            input_concat = torch.cat((input_label, merged_feat_map), dim=1)
         else:
-            input_concat = input_label        
+            input_concat = input_label
            
         if torch.__version__.startswith('0.4'):
             with torch.no_grad():

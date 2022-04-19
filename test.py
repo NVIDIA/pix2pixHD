@@ -39,29 +39,35 @@ for i, data in enumerate(dataset):
     if i >= opt.how_many:
         break
     if opt.data_type == 16:
-        data['label'] = data['label'].half()
-        data['inst']  = data['inst'].half()
+        data['s_label'] = data['s_label'].half()
+        data['s_inst']  = data['s_inst'].half()
+        data['t_label'] = data['t_label'].half()
+        data['t_inst'] = data['t_inst'].half()
     elif opt.data_type == 8:
-        data['label'] = data['label'].uint8()
-        data['inst']  = data['inst'].uint8()
+        data['s_label'] = data['s_label'].uint8()
+        data['s_inst'] = data['s_inst'].uint8()
+        data['t_label'] = data['t_label'].uint8()
+        data['t_inst'] = data['t_inst'].uint8()
     if opt.export_onnx:
         print ("Exporting to ONNX: ", opt.export_onnx)
-        assert opt.export_onnx.endswith("onnx"), "Export model file should end with .onnx"
-        torch.onnx.export(model, [data['label'], data['inst']],
-                          opt.export_onnx, verbose=True)
+        pass
         exit(0)
-    minibatch = 1 
+
+    minibatch = 1
     if opt.engine:
         generated = run_trt_engine(opt.engine, minibatch, [data['label'], data['inst']])
     elif opt.onnx:
         generated = run_onnx(opt.onnx, opt.data_type, minibatch, [data['label'], data['inst']])
-    else:        
-        generated = model.inference(data['label'], data['inst'], data['image'])
+    else:
+        generated = model.inference(data['t_label'], data['t_inst'], data['t_image'], data['s_label'], data['s_inst'], data['s_image'])
         
-    visuals = OrderedDict([('input_label', util.tensor2label(data['label'][0], opt.label_nc)),
-                           ('synthesized_image', util.tensor2im(generated.data[0]))])
-    img_path = data['path']
-    print('process image... %s' % img_path)
-    visualizer.save_images(webpage, visuals, img_path)
+    visuals = OrderedDict([('input_label', util.tensor2label(data['t_label'][0], opt.label_nc)),
+                           ('synthesized_image', util.tensor2im(generated.data[0])),
+                           ('source_image', util.tensor2im(data['s_image'][0])),
+                           ('target_image', util.tensor2im(data['t_image'][0]))])
+    img_path1 = data['s_path']
+    img_path2 = data['t_path']
+    print('process image... %s ----->>>>> %s' % (img_path1, img_path2))
+    visualizer.save_images(webpage, visuals, img_path1)
 
 webpage.save()
