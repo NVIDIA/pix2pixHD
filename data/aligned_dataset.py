@@ -61,9 +61,6 @@ class AlignedDataset(BaseDataset):
             # 把所有label做了个resize后的列表。因为opt调了512所以就是原图*255
             transform_A = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
             A_tensor = transform_A(A) * 255.0
-            find_nose = A_tensor.unique()
-            if not torch.sum(find_nose == 10):
-                return False
 
         B_tensor = C_tensor = feat_tensor = 0
         ### input B (real images)
@@ -98,9 +95,6 @@ class AlignedDataset(BaseDataset):
         else:
             transform_D = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
             D_tensor = transform_D(D) * 255.0
-            find_nose = D_tensor.unique()
-            if not torch.sum(find_nose == 10):
-                return False
 
         E_tensor = F_tensor = feat_tensor = 0
         ### input B (real images)
@@ -122,23 +116,19 @@ class AlignedDataset(BaseDataset):
 
 
     def __getitem__(self, index):
-        input_dict = 0
-        while not input_dict:
-            input_dict = self.__get_set1__(index)
-        target_dict = 0
-        while not target_dict:
-            if self.opt.random_pair:
-                zidx = np.array(np.where(self.mk == False))
-                zidx = zidx.squeeze()
-                if len(zidx) == 0:
-                    self.mk.fill(0)
-                    zidx = np.arange(self.dataset_size, dtype='int64')
-                rand = int(random.random() * len(zidx))
-                index2 = zidx[rand]
-                self.mk[index2] = True
-                target_dict = self.__get_set1__(index2, s=False)
-            else:
-                target_dict = self.__get_set2__(index)
+        input_dict = self.__get_set1__(index)
+        if self.opt.random_pair:
+            zidx = np.array(np.where(self.mk == False))
+            zidx = zidx.squeeze()
+            if len(zidx) == 0:
+                self.mk.fill(0)
+                zidx = np.arange(self.dataset_size, dtype='int64')
+            rand = int(random.random() * len(zidx))
+            index2 = zidx[rand]
+            self.mk[index2] = True
+            target_dict = self.__get_set1__(index2, s=False)
+        else:
+            target_dict = self.__get_set2__(index)
         
         input_dict.update(target_dict)
         return input_dict
