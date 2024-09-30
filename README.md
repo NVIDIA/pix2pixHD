@@ -70,7 +70,7 @@ cd pix2pixHD
 
 ### Testing
 - A few example Cityscapes test images are included in the `datasets` folder.
-- Please download the pre-trained Cityscapes model from [here](https://drive.google.com/file/d/1h9SykUnuZul7J3Nbms2QGH1wa85nbN2-/view?usp=sharing) (google drive link), and put it under `./checkpoints/label2city_1024p/`
+- Please download the pre-trained Cityscapes model from [here](https://drive.google.com/file/d/1OR-2aEPHOxZKuoOV34DvQxreqGCSLcW9/view?usp=drive_link) (google drive link), and put it under `./checkpoints/label2city_1024p/`
 - Test the model (`bash ./scripts/test_1024p.sh`):
 ```bash
 #!./scripts/test_1024p.sh
