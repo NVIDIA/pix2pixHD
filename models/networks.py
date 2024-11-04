@@ -338,7 +338,7 @@ class NLayerDiscriminator(nn.Module):
         self.n_layers = n_layers
 
         kw = 4
-        padw = int(np.ceil((kw-1.0)/2))
+        padw = int(np.floor((kw-1.0)/2))
         sequence = [[nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]]
 
         nf = ndf
