@@ -34,7 +34,7 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
     transform_list = []
     if 'resize' in opt.resize_or_crop:
         osize = [opt.loadSize, opt.loadSize]
-        transform_list.append(transforms.Scale(osize, method))   
+        transform_list.append(transforms.Resize(osize, method))   
     elif 'scale_width' in opt.resize_or_crop:
         transform_list.append(transforms.Lambda(lambda img: __scale_width(img, opt.loadSize, method)))
         
@@ -53,8 +53,8 @@ def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
     transform_list += [transforms.ToTensor()]
 
     if normalize:
-        transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
-                                                (0.5, 0.5, 0.5))]
+        transform_list += [transforms.Normalize((0.5,) * opt.output_nc,
+                                                (0.5,) * opt.output_nc)]
     return transforms.Compose(transform_list)
 
 def normalize():    
