@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import os
-from torch.autograd import Variable
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
@@ -108,35 +107,38 @@ class Pix2PixHDModel(BaseModel):
             params = list(self.netD.parameters())    
             self.optimizer_D = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, 0.999))
 
-    def encode_input(self, label_map, inst_map=None, real_image=None, feat_map=None, infer=False):             
+    def encode_input(self, label_map, inst_map=None, real_image=None, feat_map=None):
         if self.opt.label_nc == 0:
-            input_label = label_map.data.cuda()
+            input_label = label_map
         else:
-            # create one-hot vector for label map 
+            if len(self.gpu_ids):
+                label_map = label_map.cuda()
+            # create one-hot vector for label map
             size = label_map.size()
             oneHot_size = (size[0], self.opt.label_nc, size[2], size[3])
-            input_label = torch.cuda.FloatTensor(torch.Size(oneHot_size)).zero_()
-            input_label = input_label.scatter_(1, label_map.data.long().cuda(), 1.0)
+            input_label = self.Tensor(torch.Size(oneHot_size)).zero_()
+            input_label = input_label.scatter_(1, label_map.long(), 1.0)
             if self.opt.data_type == 16:
                 input_label = input_label.half()
+        if len(self.gpu_ids):
+            input_label = input_label.cuda()
+            inst_map = inst_map.cuda()
 
         # get edges from instance map
         if not self.opt.no_instance:
-            inst_map = inst_map.data.cuda()
             edge_map = self.get_edges(inst_map)
-            input_label = torch.cat((input_label, edge_map), dim=1)         
-        input_label = Variable(input_label, volatile=infer)
+            input_label = torch.cat((input_label, edge_map), dim=1)
 
         # real images for training
-        if real_image is not None:
-            real_image = Variable(real_image.data.cuda())
+        if real_image is not None and len(self.gpu_ids):
+            real_image = real_image.cuda()
 
         # instance map for feature encoding
         if self.use_features:
             # get precomputed feature maps
-            if self.opt.load_features:
-                feat_map = Variable(feat_map.data.cuda())
-            if self.opt.label_feat:
+            if self.opt.load_features and len(self.gpu_ids):
+                feat_map = feat_map.cuda()
+            if self.opt.label_feat and len(self.gpu_ids):
                 inst_map = label_map.cuda()
 
         return input_label, inst_map, real_image, feat_map
@@ -194,8 +196,8 @@ class Pix2PixHDModel(BaseModel):
 
     def inference(self, label, inst, image=None):
         # Encode Inputs        
-        image = Variable(image) if image is not None else None
-        input_label, inst_map, real_image, _ = self.encode_input(Variable(label), Variable(inst), image, infer=True)
+        image = image if image is not None else None
+        input_label, inst_map, real_image, _ = self.encode_input(label, inst, image)
 
         # Fake Generation
         if self.use_features:
@@ -209,10 +211,7 @@ class Pix2PixHDModel(BaseModel):
         else:
             input_concat = input_label        
            
-        if torch.__version__.startswith('0.4'):
-            with torch.no_grad():
-                fake_image = self.netG.forward(input_concat)
-        else:
+        with torch.no_grad():
             fake_image = self.netG.forward(input_concat)
         return fake_image
 
@@ -238,11 +237,14 @@ class Pix2PixHDModel(BaseModel):
         return feat_map
 
     def encode_features(self, image, inst):
-        image = Variable(image.cuda(), volatile=True)
+        if len(self.gpu_ids):
+            image = image.cuda()
+            inst = inst.cuda()
+        with torch.no_grad():
+            feat_map = self.netE.forward(image, inst).cpu()
         feat_num = self.opt.feat_num
         h, w = inst.size()[2], inst.size()[3]
         block_num = 32
-        feat_map = self.netE.forward(image, inst.cuda())
         inst_np = inst.cpu().numpy().astype(int)
         feature = {}
         for i in range(self.opt.label_nc):
@@ -254,13 +256,16 @@ class Pix2PixHDModel(BaseModel):
             idx = idx[num//2,:]
             val = np.zeros((1, feat_num+1))                        
             for k in range(feat_num):
-                val[0, k] = feat_map[idx[0], idx[1] + k, idx[2], idx[3]].data[0]            
+                val[0, k] = feat_map[idx[0], idx[1] + k, idx[2], idx[3]].item()
             val[0, feat_num] = float(num) / (h * w // block_num)
             feature[label] = np.append(feature[label], val, axis=0)
         return feature
 
     def get_edges(self, t):
-        edge = torch.cuda.ByteTensor(t.size()).zero_()
+        edge = torch.ByteTensor(t.size())
+        if len(self.gpu_ids):
+            edge = edge.cuda()
+        edge = edge.zero_()
         edge[:,:,:,1:] = edge[:,:,:,1:] | (t[:,:,:,1:] != t[:,:,:,:-1])
         edge[:,:,:,:-1] = edge[:,:,:,:-1] | (t[:,:,:,1:] != t[:,:,:,:-1])
         edge[:,:,1:,:] = edge[:,:,1:,:] | (t[:,:,1:,:] != t[:,:,:-1,:])
